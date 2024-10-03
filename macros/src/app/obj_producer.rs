@@ -11,21 +11,21 @@ use syn::{spanned::Spanned, Meta};
 
 #[derive(Clone)]
 pub(crate) struct AgentArgs {
-    app_type: Meta,
-    sync: Option<FXBoolArg>,
-    rc: Option<FXHelper>,
-    unwrap: Option<FXNestingAttr<UnwrapArg>>,
-    builder: Option<SlurpyArgs>,
+    app_type:   Meta,
+    sync:       Option<FXBoolArg>,
+    rc:         Option<FXHelper>,
+    unwrap:     Option<FXNestingAttr<UnwrapArg>>,
+    builder:    Option<SlurpyArgs>,
     post_build: Option<FXStringArg>,
     extra_args: SlurpyArgs,
 }
 
 #[derive(FromMeta, Debug)]
 struct _AOA {
-    sync: Option<FXBoolArg>,
-    rc: Option<FXHelper>,
-    unwrap: Option<FXNestingAttr<UnwrapArg>>,
-    builder: Option<SlurpyArgs>,
+    sync:       Option<FXBoolArg>,
+    rc:         Option<FXHelper>,
+    unwrap:     Option<FXNestingAttr<UnwrapArg>>,
+    builder:    Option<SlurpyArgs>,
     post_build: Option<FXStringArg>,
     #[darling(flatten)]
     extra_args: SlurpyArgs,
@@ -38,7 +38,8 @@ impl FromMeta for AgentArgs {
                 "Expected a parent application type as the first argument",
             ));
         }
-        let NestedMeta::Meta(app_type) = items[0].clone() else {
+        let NestedMeta::Meta(app_type) = items[0].clone()
+        else {
             return Err(darling::Error::custom("Expected a parent application type here").with_span(&items[0]));
         };
         let rest = &items[1..];
@@ -95,15 +96,15 @@ impl AgentProducer {
         let builder_args = args.builder.as_ref().map_or(quote![], |b| b.to_token_stream());
 
         #[cfg(feature = "serde")]
-        let serde_off = quote![,serde(off)];
+        let serde_off = vec![quote![serde(off)]];
         #[cfg(not(feature = "serde"))]
-        let serde_off = quote![];
+        let serde_off: Vec<TokenStream> = vec![];
 
         let mut fxs_args: Vec<proc_macro2::TokenStream> =
             vec![args.sync_arg(), quote![no_new], quote![builder(#builder_args)]];
 
         #[cfg(feature = "serde")]
-        fxs_args.push(serde_off.clone());
+        fxs_args.extend(serde_off.clone());
 
         if let Some(rc) = args.rc() {
             fxs_args.push(rc.orig().map_or(quote![], |meta| meta.to_token_stream()));
@@ -119,7 +120,8 @@ impl AgentProducer {
 
         let self_arg = if args.rc.as_ref().map_or(false, |rc| rc.is_true()) {
             quote![self: &#rc_type <Self>]
-        } else {
+        }
+        else {
             quote![&self]
         };
 
@@ -134,7 +136,8 @@ impl AgentProducer {
                     self.#post_build_method();
                 }
             ]
-        } else {
+        }
+        else {
             quote![
                 #[inline(always)]
                 pub fn __fx_app_post_build(#self_arg) {}
@@ -147,12 +150,14 @@ impl AgentProducer {
             let unwrap_or_error = if let Some(expect) = unwrap_arg.expect() {
                 let expect_message = expect.value().expect("Missing a message for the 'expect' argument");
                 quote![.expect(#expect_message)]
-            } else if let Some(error) = unwrap_arg.error() {
+            }
+            else if let Some(error) = unwrap_arg.error() {
                 let error_type = error.error_type().to_token_stream();
                 let expr = error.expr();
                 return_type = quote![Result<#rc_type<#app_type>, #error_type>];
                 quote![.ok_or(#expr)]
-            } else if let Some(map) = unwrap_arg.map() {
+            }
+            else if let Some(map) = unwrap_arg.map() {
                 let error_type = map.error_type().to_token_stream();
                 let expr = match map.expr() {
                     Meta::List(ref call) => quote![.#call],
@@ -161,11 +166,13 @@ impl AgentProducer {
                 };
                 return_type = quote![Result<#rc_type<#app_type>, #error_type>];
                 quote![.ok_or_else(|| self #expr)]
-            } else {
+            }
+            else {
                 quote![.unwrap()]
             };
             (unwrap_or_error, return_type)
-        } else {
+        }
+        else {
             (quote![], quote![::std::option::Option<#rc_type<#app_type>>])
         };
 
@@ -174,7 +181,7 @@ impl AgentProducer {
             #(#attrs)*
             #vis struct #ident #generics #where_clause {
                 #[fieldx(lazy(off), predicate(off), clearer(off), get(off), set(off)
-                         #serde_off, builder("app"))]
+                         #(, #serde_off )*, builder("app"))]
                 #app_field_name: #weak_type <#app_type>,
                 #( #fields ),*
             }
@@ -195,7 +202,6 @@ impl AgentProducer {
                 }
             }
         ];
-        // eprintln!("{}", tt);
         tt
     }
 }

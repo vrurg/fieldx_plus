@@ -24,20 +24,20 @@ trait FieldXStruct {
 #[derive(Debug, FromDeriveInput)]
 #[darling(attributes(agent), supports(struct_named), forward_attrs)]
 pub(crate) struct AgentStruct {
-    pub(crate) vis: syn::Visibility,
-    pub(crate) ident: syn::Ident,
-    pub(crate) data: ast::Data<(), syn::Field>,
-    pub(crate) attrs: Vec<syn::Attribute>,
+    pub(crate) vis:      syn::Visibility,
+    pub(crate) ident:    syn::Ident,
+    pub(crate) data:     ast::Data<(), syn::Field>,
+    pub(crate) attrs:    Vec<syn::Attribute>,
     pub(crate) generics: syn::Generics,
 }
 
 #[derive(Debug, FromDeriveInput)]
 #[darling(attributes(app), supports(struct_named), forward_attrs)]
 pub(crate) struct AppStruct {
-    pub(crate) vis: syn::Visibility,
-    pub(crate) ident: syn::Ident,
-    pub(crate) data: ast::Data<(), syn::Field>,
-    pub(crate) attrs: Vec<syn::Attribute>,
+    pub(crate) vis:      syn::Visibility,
+    pub(crate) ident:    syn::Ident,
+    pub(crate) data:     ast::Data<(), syn::Field>,
+    pub(crate) attrs:    Vec<syn::Attribute>,
     pub(crate) generics: syn::Generics,
 }
 

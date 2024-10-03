@@ -61,7 +61,6 @@ impl AppProducer {
 
         let extra_args = args.extra_args.to_token_stream();
         if !extra_args.is_empty() {
-            eprintln!("Extra args: {}", extra_args);
             fxs_args.push(extra_args);
         }
 
@@ -86,7 +85,6 @@ impl AppProducer {
                 }
             }
         ];
-        // eprintln!("{}", tt);
         tt
     }
 }
