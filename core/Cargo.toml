@@ -1,0 +1,16 @@
+[package]
+    edition = "2021"
+    name    = "fieldx_plus"
+    version = "0.1.0"
+
+[dependencies]
+    fieldx             = { workspace = true }
+    fieldx_aux         = { workspace = true }
+    fieldx_plus_macros = { workspace = true }
+
+[dev-dependencies]
+    thiserror = { workspace = true }
+
+[features]
+    send_guard = ["fieldx/send_guard"]
+    serde      = ["fieldx/serde"]

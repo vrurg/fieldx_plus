@@ -1,0 +1,17 @@
+[workspace]
+    members  = ["core", "macros"]
+    resolver = "2"
+
+[workspace.dependencies]
+    darling            = ">=0.20.7"
+    fieldx             = { version = ">=0.1.5" }
+    fieldx_aux         = { version = "0.1.5" }
+    fieldx_plus_macros = { path = "macros" }
+    proc-macro2        = "1.0"
+    quote              = "1.0"
+    syn                = "2.0"
+    thiserror          = "1.0"
+
+[patch.crates-io]
+    fieldx_plus        = { path = "core" }
+    fieldx_plus_macros = { path = "macros" }
