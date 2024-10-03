@@ -85,6 +85,8 @@
 //! `agent_build!(self.app(), Agent => foo: 42; bar: "baz")` is actually a shortcut for
 //! `Agent::builder().app(self.app()).foo(42).bar("baz").build()`. `agent_builder` is the same but without the final
 //! `build()` call.
+//!
+//! `App` and `Agent` traits must be in scope for the `app()` and `app_downgrade()` methods.
 
 pub mod traits;
 
