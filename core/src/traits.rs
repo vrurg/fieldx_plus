@@ -3,7 +3,7 @@ pub trait App<RcType, WeakType> {
     fn app_downgrade(&self) -> WeakType;
 }
 
-pub trait AppObj<RcType> {
+pub trait Agent<RcType> {
     type AppType;
     type WeakType;
     fn app(&self) -> Self::AppType;

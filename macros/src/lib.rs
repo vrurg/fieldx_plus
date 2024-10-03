@@ -6,8 +6,8 @@ use syn::DeriveInput;
 
 use crate::app::{
     app_producer::{AppArgs, AppProducer},
-    obj_producer::{AppObjArgs, AppObjProducer},
-    AppObjStruct, AppStruct,
+    obj_producer::{AgentArgs, AgentProducer},
+    AgentStruct, AppStruct,
 };
 
 mod app;
@@ -51,6 +51,6 @@ pub fn fx_app(args: proc_macro::TokenStream, input: proc_macro::TokenStream) -> 
 }
 
 #[proc_macro_attribute]
-pub fn fx_appobj(args: proc_macro::TokenStream, input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    gen_tokens!(args as AppObjArgs, input as AppObjStruct, AppObjProducer).into()
+pub fn fx_agent(args: proc_macro::TokenStream, input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    gen_tokens!(args as AgentArgs, input as AgentStruct, AgentProducer).into()
 }

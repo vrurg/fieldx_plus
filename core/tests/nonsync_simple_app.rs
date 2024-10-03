@@ -1,4 +1,4 @@
-use fieldx_plus::{appobj_builder, fx_app, fx_appobj, AppObj};
+use fieldx_plus::{agent_builder, fx_agent, fx_app, Agent};
 use std::rc::Rc;
 use thiserror::Error;
 
@@ -26,7 +26,7 @@ impl MyApp {
     }
 }
 
-#[fx_appobj(MyApp, sync(off), unwrap(error(MyError, MyError::adhoc("something"))))]
+#[fx_agent(MyApp, sync(off), unwrap(error(MyError, MyError::adhoc("something"))))]
 #[derive(Default)]
 struct AChild {
     #[fieldx(get(clone), builder(into))]
@@ -46,7 +46,7 @@ fn new_app() {
     let a: Rc<MyApp> = app.app();
     assert_eq!(a.foo(), "some str".to_string());
 
-    let ac = appobj_builder!(
+    let ac = agent_builder!(
         app, AChild =>
         a_foo: "oki!";
     )

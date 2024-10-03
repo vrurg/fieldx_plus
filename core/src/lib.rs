@@ -1,10 +1,10 @@
 pub mod traits;
 
-pub use crate::traits::{App, AppObj};
-pub use fieldx_plus_macros::{fx_app, fx_appobj};
+pub use crate::traits::{Agent, App};
+pub use fieldx_plus_macros::{fx_agent, fx_app};
 
 #[macro_export]
-macro_rules! appobj_builder {
+macro_rules! agent_builder {
     ($self:expr, $($ty:ident)::+ $( => $( $field:ident : $initializer:expr ; )* )? ) => {
             $($ty)::+ ::builder()
                 .app( $self.app_downgrade() )
@@ -13,12 +13,11 @@ macro_rules! appobj_builder {
 }
 
 #[macro_export]
-macro_rules! appobj_build {
+macro_rules! agent_build {
     ($self:expr, $($ty:ident)::+ $( => $( $field:ident : $initializer:expr ; )* )? ) => {
             $($ty)::+ ::builder()
                 .app( $self.app_downgrade() )
                 $( $( .$field($initializer) )* )?
                 .build()
-                // .inspect(|appobj| appobj.__fx_app_post_build())
     }
 }

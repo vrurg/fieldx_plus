@@ -22,26 +22,26 @@ trait FieldXStruct {
 }
 
 #[derive(Debug, FromDeriveInput)]
-#[darling(attributes(appobj), supports(struct_named), forward_attrs)]
-pub(crate) struct AppObjStruct {
-    pub(crate) vis:      syn::Visibility,
-    pub(crate) ident:    syn::Ident,
-    pub(crate) data:     ast::Data<(), syn::Field>,
-    pub(crate) attrs:    Vec<syn::Attribute>,
+#[darling(attributes(agent), supports(struct_named), forward_attrs)]
+pub(crate) struct AgentStruct {
+    pub(crate) vis: syn::Visibility,
+    pub(crate) ident: syn::Ident,
+    pub(crate) data: ast::Data<(), syn::Field>,
+    pub(crate) attrs: Vec<syn::Attribute>,
     pub(crate) generics: syn::Generics,
 }
 
 #[derive(Debug, FromDeriveInput)]
 #[darling(attributes(app), supports(struct_named), forward_attrs)]
 pub(crate) struct AppStruct {
-    pub(crate) vis:      syn::Visibility,
-    pub(crate) ident:    syn::Ident,
-    pub(crate) data:     ast::Data<(), syn::Field>,
-    pub(crate) attrs:    Vec<syn::Attribute>,
+    pub(crate) vis: syn::Visibility,
+    pub(crate) ident: syn::Ident,
+    pub(crate) data: ast::Data<(), syn::Field>,
+    pub(crate) attrs: Vec<syn::Attribute>,
     pub(crate) generics: syn::Generics,
 }
 
-impl FieldXStruct for AppObjStruct {
+impl FieldXStruct for AgentStruct {
     fn data(&self) -> &ast::Data<(), syn::Field> {
         &self.data
     }

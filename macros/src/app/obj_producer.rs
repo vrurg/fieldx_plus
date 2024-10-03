@@ -1,5 +1,5 @@
 use crate::{
-    app::{AppObjStruct, FieldXStruct},
+    app::{AgentStruct, FieldXStruct},
     traits::SyncMode,
     types::{SlurpyArgs, UnwrapArg},
 };
@@ -10,7 +10,7 @@ use quote::{format_ident, quote, quote_spanned, ToTokens};
 use syn::{spanned::Spanned, Meta};
 
 #[derive(Clone)]
-pub(crate) struct AppObjArgs {
+pub(crate) struct AgentArgs {
     app_type: Meta,
     sync: Option<FXBoolArg>,
     rc: Option<FXHelper>,
@@ -31,7 +31,7 @@ struct _AOA {
     extra_args: SlurpyArgs,
 }
 
-impl FromMeta for AppObjArgs {
+impl FromMeta for AgentArgs {
     fn from_list(items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
         if items.len() < 1 {
             return Err(darling::Error::custom(
@@ -57,7 +57,7 @@ impl FromMeta for AppObjArgs {
     }
 }
 
-impl SyncMode for AppObjArgs {
+impl SyncMode for AgentArgs {
     fn rc(&self) -> Option<&FXHelper> {
         self.rc.as_ref()
     }
@@ -67,28 +67,28 @@ impl SyncMode for AppObjArgs {
     }
 }
 
-impl AppObjArgs {
+impl AgentArgs {
     pub(crate) fn needs_unwrap(&self) -> bool {
         self.unwrap.as_ref().map_or(false, |u| u.is_true())
     }
 }
 
-pub(crate) struct AppObjProducer {}
+pub(crate) struct AgentProducer {}
 
-impl AppObjProducer {
+impl AgentProducer {
     pub fn new() -> Self {
         Self {}
     }
 
-    pub(crate) fn produce(&self, appobj_struct: AppObjStruct, args: AppObjArgs) -> TokenStream {
-        let fields = appobj_struct.fields();
-        let AppObjStruct {
+    pub(crate) fn produce(&self, agent_struct: AgentStruct, args: AgentArgs) -> TokenStream {
+        let fields = agent_struct.fields();
+        let AgentStruct {
             vis,
             ident,
             attrs,
             generics,
             ..
-        } = appobj_struct;
+        } = agent_struct;
 
         let app_field_name = format_ident!("__app");
         let app_type = &args.app_type;
@@ -183,7 +183,7 @@ impl AppObjProducer {
                 #post_build_tt
             }
 
-            impl #impl_generics ::fieldx_plus::AppObj<#rc_type <Self>> for #ident #ty_generics #where_clause {
+            impl #impl_generics ::fieldx_plus::Agent<#rc_type <Self>> for #ident #ty_generics #where_clause {
                 type AppType = #app_return_type;
                 type WeakType = #weak_type <#app_type>;
                 fn app(&self) -> Self::AppType {
