@@ -145,6 +145,7 @@ version = "0.1.0"
 dependencies = [
  "fieldx",
  "fieldx_aux",
+ "fieldx_plus",
  "fieldx_plus_macros",
  "thiserror",
 ]
