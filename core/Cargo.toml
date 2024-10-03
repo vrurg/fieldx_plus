@@ -1,7 +1,14 @@
 [package]
-    edition = "2021"
-    name    = "fieldx_plus"
-    version = "0.1.0"
+    authors.workspace      = true
+    categories.workspace   = true
+    description            = "Design patterns built on top of fieldx crate "
+    edition.workspace      = true
+    exclude.workspace      = true
+    keywords.workspace     = true
+    license-file.workspace = true
+    name                   = "fieldx_plus"
+    readme                 = "../README.md"
+    repository.workspace   = true
 
 [dependencies]
     fieldx             = { workspace = true }

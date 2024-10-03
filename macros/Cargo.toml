@@ -1,7 +1,15 @@
 [package]
-    edition = "2021"
-    name    = "fieldx_plus_macros"
-    version = "0.1.0"
+    authors.workspace      = true
+    categories.workspace   = true
+    description            = "Heler macros for fieldx_plus crate"
+    edition.workspace      = true
+    exclude.workspace      = true
+    keywords.workspace     = true
+    license-file.workspace = true
+    name                   = "fieldx_plus_macros"
+    readme                 = "../README.md"
+    repository.workspace   = true
+    version                = "0.1.0"
 
 [dependencies]
     darling     = { workspace = true }
