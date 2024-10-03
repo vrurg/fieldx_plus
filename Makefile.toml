@@ -8,11 +8,10 @@
     default_to_workspace = false
 
 [tasks.test]
-    category    = "Test"
-    clear       = true
-    description = "Extensive testing"
-    #dependencies = ["test-default", "test-serde", "test-diagnostics"]
-    dependencies = ["test-default"]
+    category     = "Test"
+    clear        = true
+    dependencies = ["test-default", "test-serde", "test-send_guard", "test-all-features"]
+    description  = "Extensive testing"
 
 [tasks.test-versions]
     description = "TESTING SUPPORTED Rust VERSIONS"
@@ -39,20 +38,26 @@ end
     description = "Test with only the default features"
     toolchain   = "${__FIELDX_DEFAULT_TOOLCHAIN__}"
 
-[tasks.test-diagnostics]
-    args = ["test", "--workspace", "--features", "diagnostics"]
-    category = "Test"
-    command = "cargo"
-    condition_script = ["""
-#!@duckscript
-if eq ${__FIELDX_DEFAULT_TOOLCHAIN__} "nightly"
-    exit 0
-end
-echo Skipping diagnostics test on a non-nightly toolchain
-exit 1
-"""]
-    description = "Test with 'diagnostics' feature"
-    toolchain = "${__FIELDX_DEFAULT_TOOLCHAIN__}"
+[tasks.test-serde]
+    args        = ["test", "--workspace", "--features", "serde"]
+    category    = "Test"
+    command     = "cargo"
+    description = "Test with 'serde' feature"
+    toolchain   = "${__FIELDX_DEFAULT_TOOLCHAIN__}"
+
+[tasks.test-send_guard]
+    args        = ["test", "--workspace", "--features", "send_guard"]
+    category    = "Test"
+    command     = "cargo"
+    description = "Test with 'serde' feature"
+    toolchain   = "${__FIELDX_DEFAULT_TOOLCHAIN__}"
+
+[tasks.test-all-features]
+    args        = ["test", "--workspace", "--all-features"]
+    category    = "Test"
+    command     = "cargo"
+    description = "Test with all features enabled"
+    toolchain   = "${__FIELDX_DEFAULT_TOOLCHAIN__}"
 
 [tasks.test-compilation]
     description = "Run only the compilation test"
