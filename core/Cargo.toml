@@ -17,9 +17,8 @@
     fieldx_plus_macros = { workspace = true }
 
 [dev-dependencies]
-    fieldx      = { workspace = true }
-    fieldx_plus = { workspace = true }
-    thiserror   = { workspace = true }
+    fieldx    = { workspace = true }
+    thiserror = { workspace = true }
 
 [features]
     send_guard = ["fieldx/send_guard"]
