@@ -91,6 +91,8 @@ Two helper macros `agent_build` and `agent_builder` are wrappers around builder 
 `Agent::builder().app(self.app()).foo(42).bar("baz").build()`. `agent_builder` is the same but without the final
 `build()` call.
 
+`App` and `Agent` traits must be in scope for the `app()` and `app_downgrade()` methods.
+
 # License
 
 Licensed under [the BSD 3-Clause License](/LICENSE).
