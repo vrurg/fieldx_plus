@@ -5,8 +5,8 @@ use proc_macro2::TokenStream;
 use syn::DeriveInput;
 
 use crate::app::{
+    agent_producer::{AgentArgs, AgentProducer},
     app_producer::{AppArgs, AppProducer},
-    obj_producer::{AgentArgs, AgentProducer},
     AgentStruct, AppStruct,
 };
 

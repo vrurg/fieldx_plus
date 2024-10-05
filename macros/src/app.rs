@@ -3,8 +3,8 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn;
 
+pub mod agent_producer;
 pub mod app_producer;
-pub mod obj_producer;
 
 trait FieldXStruct {
     fn data(&self) -> &ast::Data<(), syn::Field>;

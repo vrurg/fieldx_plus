@@ -16,7 +16,6 @@ pub(crate) struct AgentArgs {
     rc:         Option<FXHelper>,
     unwrap:     Option<FXNestingAttr<UnwrapArg>>,
     builder:    Option<SlurpyArgs>,
-    post_build: Option<FXStringArg>,
     extra_args: SlurpyArgs,
 }
 
@@ -26,7 +25,6 @@ struct _AOA {
     rc:         Option<FXHelper>,
     unwrap:     Option<FXNestingAttr<UnwrapArg>>,
     builder:    Option<SlurpyArgs>,
-    post_build: Option<FXStringArg>,
     #[darling(flatten)]
     extra_args: SlurpyArgs,
 }
@@ -53,7 +51,6 @@ impl FromMeta for AgentArgs {
             unwrap: aoa.unwrap,
             builder: aoa.builder,
             extra_args: aoa.extra_args,
-            post_build: aoa.post_build,
         })
     }
 }
@@ -117,32 +114,7 @@ impl AgentProducer {
         }
 
         let (rc_type, weak_type) = args.rc_type();
-
-        let self_arg = if args.rc.as_ref().map_or(false, |rc| rc.is_true()) {
-            quote![self: &#rc_type <Self>]
-        }
-        else {
-            quote![&self]
-        };
-
         let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
-
-        let post_build_tt = if let Some(ref post_build) = args.post_build {
-            let span = post_build.orig().span();
-            let post_build_method = format_ident!("{}", post_build.value().unwrap());
-            quote_spanned![span=>
-                #[inline(always)]
-                pub fn __fx_app_post_build(#self_arg) {
-                    self.#post_build_method();
-                }
-            ]
-        }
-        else {
-            quote![
-                #[inline(always)]
-                pub fn __fx_app_post_build(#self_arg) {}
-            ]
-        };
 
         let (unwrapping, app_return_type) = if args.needs_unwrap() {
             let unwrap_arg = args.unwrap.as_ref().unwrap();
@@ -184,10 +156,6 @@ impl AgentProducer {
                          #(, #serde_off )*, builder("app"))]
                 #app_field_name: #weak_type <#app_type>,
                 #( #fields ),*
-            }
-
-            impl #impl_generics #ident #ty_generics #where_clause {
-                #post_build_tt
             }
 
             impl #impl_generics ::fieldx_plus::Agent<#rc_type <Self>> for #ident #ty_generics #where_clause {
