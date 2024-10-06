@@ -124,7 +124,7 @@ impl FXTriggerHelper for UnwrapArg {
 
 #[fxstruct(get, default(off))]
 #[derive(Debug, Clone)]
-pub(crate) struct ChildArgs<D> {
+pub(crate) struct ChildArgsInner<D> {
     parent_type:   syn::Meta,
     #[fieldx(optional, get(as_ref))]
     rc_strong:     FXBoolArg,
@@ -133,6 +133,8 @@ pub(crate) struct ChildArgs<D> {
     _d:            PhantomData<D>,
 }
 
+impl<D: ProducerDescriptor> FromNestAttr for ChildArgsInner<D> {}
+
 #[derive(FromMeta, Debug)]
 struct _ChldArgs {
     rc_strong:     Option<FXBoolArg>,
@@ -140,7 +142,7 @@ struct _ChldArgs {
     unwrap_parent: Option<FXNestingAttr<UnwrapArg>>,
 }
 
-impl<D: ProducerDescriptor> FromMeta for ChildArgs<D> {
+impl<D: ProducerDescriptor> FromMeta for ChildArgsInner<D> {
     fn from_list(items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
         if items.len() < 1 {
             return Err(darling::Error::custom(format!(
@@ -165,8 +167,10 @@ impl<D: ProducerDescriptor> FromMeta for ChildArgs<D> {
     }
 }
 
-impl<D: ProducerDescriptor> ChildArgs<D> {
+impl<D: ProducerDescriptor> ChildArgsInner<D> {
     pub(crate) fn base_name(&self) -> &'static str {
         D::base_name()
     }
 }
+
+pub type ChildArgs<D> = FXNestingAttr<ChildArgsInner<D>>;

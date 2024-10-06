@@ -3,10 +3,12 @@ use crate::{
     types::{ChildArgs, SlurpyArgs},
 };
 use darling::{ast, FromDeriveInput, FromMeta};
-use fieldx_aux::{FXBoolArg, FXHelper, FXHelperTrait, FXTriggerHelper};
-use proc_macro2::TokenStream;
-use quote::{format_ident, quote, ToTokens};
-use syn::Meta;
+use fieldx::fxstruct;
+use fieldx_aux::{FXBoolArg, FXHelper, FXHelperTrait, FXNestingAttr, FXTriggerHelper};
+use proc_macro2::{Span, TokenStream};
+use quote::{format_ident, quote, quote_spanned, ToTokens};
+use std::{collections::HashMap, sync::Mutex};
+use syn::{spanned::Spanned, Meta};
 
 #[derive(Debug, Clone)]
 struct AppDescriptor {}
@@ -20,6 +22,11 @@ impl ProducerDescriptor for AppDescriptor {
     #[inline(always)]
     fn base_name() -> &'static str {
         "app"
+    }
+
+    #[inline(always)]
+    fn child_trait() -> (&'static str, TokenStream, TokenStream) {
+        ("Agent", quote! {RcApp}, quote! {WeakApp})
     }
 }
 
@@ -35,6 +42,11 @@ impl ProducerDescriptor for ParentDescriptor {
     #[inline(always)]
     fn base_name() -> &'static str {
         "parent"
+    }
+
+    #[inline(always)]
+    fn child_trait() -> (&'static str, TokenStream, TokenStream) {
+        ("Child", quote! {RcParent}, quote! {WeakParent})
     }
 }
 
@@ -61,29 +73,56 @@ impl FXPlusStruct {
     }
 }
 
+#[fxstruct(get)]
 #[derive(FromMeta, Debug, Clone)]
 pub(crate) struct FXPlusArgs {
-    agent:         Option<ChildArgs<AppDescriptor>>,
-    app:           Option<FXBoolArg>,
-    parent:        Option<FXBoolArg>,
-    child:         Option<ChildArgs<ParentDescriptor>>,
-    builder:       Option<SlurpyArgs>,
+    #[fieldx(optional, get(as_ref))]
+    agent:         ChildArgs<AppDescriptor>,
+    #[fieldx(optional, get(as_ref))]
+    app:           FXBoolArg,
+    #[fieldx(optional, get(as_ref))]
+    parent:        FXBoolArg,
+    #[fieldx(optional, get(as_ref))]
+    child:         ChildArgs<ParentDescriptor>,
+    #[fieldx(optional, get(as_ref))]
+    builder:       SlurpyArgs,
+    #[fieldx(optional, get(as_ref))]
     #[darling(rename = "default")]
-    needs_default: Option<FXBoolArg>,
-    rc:            Option<FXHelper>,
-    sync:          Option<FXBoolArg>,
+    needs_default: FXBoolArg,
+    #[fieldx(optional, get(as_ref))]
+    rc:            FXHelper,
+    #[fieldx(optional, get(as_ref))]
+    sync:          FXBoolArg,
     #[darling(flatten)]
     extra_args:    SlurpyArgs,
 }
 
+#[fxstruct(no_new)]
 pub(crate) struct FXPlusProducer {
     args:        FXPlusArgs,
     plus_struct: FXPlusStruct,
+
+    #[fieldx(inner_mut, get_mut)]
+    struct_fields: Vec<TokenStream>,
+
+    #[fieldx(inner_mut, get_mut)]
+    traits: HashMap<syn::Ident, Vec<TokenStream>>,
 }
 
 impl FXPlusProducer {
     pub fn new(args: FXPlusArgs, plus_struct: FXPlusStruct) -> Self {
-        Self { args, plus_struct }
+        Self {
+            args,
+            plus_struct,
+            struct_fields: Default::default(),
+            traits: Default::default(),
+        }
+    }
+
+    fn add_to_trait(&self, trait_name: &syn::Ident, tt: TokenStream) {
+        let mut traits = self.traits_mut();
+        let entry = traits.entry(trait_name.clone()).or_default();
+        entry.push(tt);
     }
 
     fn myself_name(&self) -> String {
@@ -95,20 +134,25 @@ impl FXPlusProducer {
     }
 
     fn sync_arg(&self) -> TokenStream {
-        if self.args.sync.as_ref().map_or(false, |b| b.is_true()) {
-            quote![sync]
-        }
-        else {
-            quote![sync(off)]
-        }
+        self.args
+            .sync
+            .as_ref()
+            .map_or(quote![sync(off)], |b| b.to_token_stream())
     }
 
     fn rc_type(&self) -> (TokenStream, TokenStream) {
+        let span = self.args.sync.as_ref().map_or(Span::call_site(), |s| s.span());
         if self.args.sync.as_ref().map_or(false, |b| b.is_true()) {
-            (quote![::std::sync::Arc], quote![::std::sync::Weak])
+            (
+                quote_spanned![span=> ::std::sync::Arc],
+                quote_spanned![span=> ::std::sync::Weak],
+            )
         }
         else {
-            (quote![::std::rc::Rc], quote![::std::rc::Weak])
+            (
+                quote_spanned![span=> ::std::rc::Rc],
+                quote_spanned![span=> ::std::rc::Weak],
+            )
         }
     }
 
@@ -116,8 +160,19 @@ impl FXPlusProducer {
         &self,
         child_args: &ChildArgs<D>,
     ) -> darling::Result<(TokenStream, TokenStream)> {
-        let parent_type = &child_args.parent_type();
-        let (rc_type, _weak_type) = self.rc_type();
+        let child_args_span = child_args.span();
+        let parent_type = child_args.parent_type();
+        let (rc_type, weak_type) = self.rc_type();
+        let (trait_name, rc_assoc, weak_assoc) = D::child_trait();
+
+        let trait_name = format_ident!("{}", trait_name, span = child_args_span);
+
+        self.add_to_trait(
+            &trait_name,
+            quote_spanned! {parent_type.span()=>
+                type #weak_assoc = #weak_type<#parent_type>;
+            },
+        );
 
         Ok(if let Some(ref unwrap_arg) = child_args.unwrap_parent() {
             let mut return_type = quote![#rc_type<#parent_type>];
@@ -126,12 +181,28 @@ impl FXPlusProducer {
                 else {
                     return Err(darling::Error::custom("Missing message for the 'expect' argument").with_span(&expect));
                 };
-                quote![.expect(#expect_message)]
+
+                self.add_to_trait(
+                    &trait_name,
+                    quote_spanned! {parent_type.span()=>
+                        type #rc_assoc = #rc_type<#parent_type>;
+                    },
+                );
+
+                quote_spanned![expect.span()=> .expect(#expect_message)]
             }
             else if let Some(error) = unwrap_arg.error_arg() {
                 let error_type = error.error_type().to_token_stream();
                 let expr = error.expr();
-                return_type = quote![Result<#rc_type<#parent_type>, #error_type>];
+                return_type = quote_spanned![error.span()=> Result<#rc_type<#parent_type>, #error_type>];
+
+                self.add_to_trait(
+                    &trait_name,
+                    quote_spanned! {parent_type.span()=>
+                        type #rc_assoc = #return_type;
+                    },
+                );
+
                 quote![.ok_or(#expr)]
             }
             else if let Some(map) = unwrap_arg.map_arg() {
@@ -141,11 +212,26 @@ impl FXPlusProducer {
                     Meta::Path(ref method) => quote![.#method()],
                     _ => panic!("It's an internal problem: name-value must not appear here!"),
                 };
-                return_type = quote![Result<#rc_type<#parent_type>, #error_type>];
-                quote![.ok_or_else(|| self #expr)]
+                return_type = quote_spanned![map.span()=> Result<#rc_type<#parent_type>, #error_type>];
+
+                self.add_to_trait(
+                    &trait_name,
+                    quote_spanned! {parent_type.span()=>
+                        type #rc_assoc = #return_type;
+                    },
+                );
+
+                quote![map.span()=> .ok_or_else(|| self #expr)]
             }
             else {
-                quote![.unwrap()]
+                self.add_to_trait(
+                    &trait_name,
+                    quote_spanned! {parent_type.span()=>
+                        type #rc_assoc = #rc_type<#parent_type>;
+                    },
+                );
+
+                quote_spanned![unwrap_arg.span()=> .unwrap()]
             };
             (unwrap_or_error, return_type)
         }
@@ -155,7 +241,7 @@ impl FXPlusProducer {
     }
 
     fn parent_field_name<D: ProducerDescriptor>(&self, child_args: &ChildArgs<D>) -> syn::Ident {
-        format_ident!("__{}", child_args.base_name())
+        format_ident!("__{}", child_args.base_name(), span = child_args.span())
     }
 
     fn child_method_bodies<D: ProducerDescriptor>(
@@ -165,20 +251,21 @@ impl FXPlusProducer {
     ) -> (TokenStream, syn::Ident, TokenStream, TokenStream) {
         let (rc_type, weak_type) = self.rc_type();
         let parent_field_name: syn::Ident = self.parent_field_name(child_args);
+        let span = child_args.rc_strong().map_or_else(|| child_args.span(), |r| r.span());
         if child_args.rc_strong().map_or(false, |rs| rs.is_true()) {
             (
                 rc_type.clone(),
                 parent_field_name.clone(),
-                quote! { self.#parent_field_name },
-                quote! { #rc_type::downgrade(&self.#parent_field_name) },
+                quote_spanned! {span=> self.#parent_field_name },
+                quote_spanned! {span=> #rc_type::downgrade(&self.#parent_field_name) },
             )
         }
         else {
             (
                 weak_type.clone(),
                 parent_field_name.clone(),
-                quote! { self.#parent_field_name.upgrade()#unwrapping },
-                quote! { #weak_type ::clone(&self.#parent_field_name) },
+                quote_spanned! {span=> #weak_type ::upgrade( &self.#parent_field_name ) #unwrapping },
+                quote_spanned! {span=> #weak_type ::clone(&self.#parent_field_name) },
             )
         }
     }
@@ -187,22 +274,27 @@ impl FXPlusProducer {
         &self,
         child_args: &ChildArgs<D>,
         serde_off: &Vec<TokenStream>,
-    ) -> darling::Result<(TokenStream, TokenStream)> {
+    ) -> darling::Result<()> {
+        let child_args_span = child_args.span();
         let (unwrapping, parent_return_type) = self.child_params(child_args)?;
         let base_name = D::base_name();
-        let parent_ident = format_ident!("{}", base_name);
-        let parent_downgrade_ident = format_ident!("{}_downgrade", base_name);
+        let parent_ident = format_ident!("{}", base_name, span = child_args_span);
+        let parent_downgrade_ident = format_ident!("{}_downgrade", base_name, span = child_args_span);
         let parent_type = child_args.parent_type();
         let (rc_field_type, parent_field_name, parent_body, parent_downgrade_body) =
             self.child_method_bodies(child_args, unwrapping);
-        let (_, weak_type) = self.rc_type();
-        Ok((
-            quote! {
-                #[fieldx(lazy(off), predicate(off), clearer(off), get(off), set(off)
-                        #(, #serde_off )*, builder(#base_name))]
-                #parent_field_name: #rc_field_type <#parent_type>
-            },
-            quote! {
+        let (_rc_type, weak_type) = self.rc_type();
+        self.struct_fields_mut().push(quote_spanned! {child_args_span=>
+            #[fieldx(lazy(off), predicate(off), clearer(off), get(off), set(off)
+                    #(, #serde_off )*, builder(#base_name))]
+            #parent_field_name: #rc_field_type <#parent_type>
+        });
+
+        let (trait_name, _rc_assoc, _weak_assoc) = D::child_trait();
+        let trait_name = format_ident!("{}", trait_name, span = child_args_span);
+        self.add_to_trait(
+            &trait_name,
+            quote_spanned! {child_args_span=>
                 fn #parent_ident(&self) -> #parent_return_type {
                     #parent_body
                 }
@@ -211,7 +303,8 @@ impl FXPlusProducer {
                     #parent_downgrade_body
                 }
             },
-        ))
+        );
+        Ok(())
     }
 
     pub(crate) fn produce(&self) -> darling::Result<TokenStream> {
@@ -242,21 +335,33 @@ impl FXPlusProducer {
         #[cfg(feature = "serde")]
         fxs_args.extend(serde_off.clone());
 
+        let app_parent_span = args
+            .app()
+            .map(|a| a.span())
+            .or_else(|| args.parent().map(|p| p.span()))
+            .unwrap_or_else(Span::call_site);
+
         if let Some(ref rc) = args.rc {
             fxs_args.push(rc.to_token_stream());
         }
         else if is_app || is_parent {
-            fxs_args.push(quote! {rc(#myself_name)});
+            fxs_args.push(quote_spanned! {app_parent_span=> rc(#myself_name)});
         }
 
         if is_child || is_agent {
             let builder_args = args.builder.as_ref().map_or(quote! {}, |bargs| quote! { (#bargs) });
-            fxs_args.push(quote! {builder #builder_args});
-            fxs_args.push(quote! {no_new});
+            let span = args
+                .child()
+                .map(|c| c.span())
+                .or_else(|| args.agent().map(|a| a.span()))
+                .unwrap_or_else(Span::call_site);
+            fxs_args.push(quote_spanned! {span=> builder #builder_args});
+            fxs_args.push(quote_spanned! {span=> no_new});
         }
 
         if args.needs_default.as_ref().map_or(true, |nd| nd.is_true()) {
-            fxs_args.push(quote! {default});
+            let span = args.needs_default().map_or_else(Span::call_site, |nd| nd.span());
+            fxs_args.push(quote_spanned! {span=> default});
         }
 
         let extra_args = args.extra_args.to_token_stream();
@@ -264,54 +369,66 @@ impl FXPlusProducer {
             fxs_args.push(extra_args);
         }
 
-        let mut methods = vec![];
-        let mut fields = vec![];
-
-        if let Some(ref app_args) = self.args.agent {
-            let (app_field, agent_methods) = self.child_elems(app_args, &serde_off)?;
-            fields.push(app_field);
-            methods.push(agent_methods);
+        if let Some(ref agent_args) = self.args.agent {
+            self.child_elems(agent_args, &serde_off)?;
         }
 
         if let Some(ref child_args) = self.args.child {
-            let (parent_field, child_methods) = self.child_elems(child_args, &serde_off)?;
-            fields.push(parent_field);
-            methods.push(child_methods);
+            self.child_elems(child_args, &serde_off)?;
         }
 
         if is_app || is_parent {
             let (_, weak_type) = self.rc_type();
             let myself_downgrade = format_ident!("{}_downgrade", myself_name);
-            methods.push(quote! {
-                #[inline(always)]
-                fn __fxplus_myself_downgrade(&self) -> #weak_type<Self> {
-                    self.#myself_downgrade()
-                }
-            })
+            let trait_name = format_ident!("{}", "Parent", span = app_parent_span);
+            self.add_to_trait(
+                &trait_name,
+                quote_spanned! {app_parent_span=> type WeakSelf = #weak_type<Self>;},
+            );
+            self.add_to_trait(
+                &trait_name,
+                quote_spanned! {app_parent_span=>
+                    #[inline(always)]
+                    fn __fxplus_myself_downgrade(&self) -> #weak_type<Self> {
+                        self.#myself_downgrade()
+                    }
+                },
+            );
         }
 
+        if is_app {
+            // Just to have it implemented as a marker
+            let trait_name = format_ident!(
+                "Application",
+                span = self.args.app().map_or_else(Span::call_site, |a| a.span())
+            );
+            self.add_to_trait(&trait_name, quote! {});
+        }
+
+        let mut fields = self.struct_fields().clone();
         fields.extend(self.plus_struct.fields());
 
         let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
-        let struct_impl = if methods.len() > 0 {
-            quote! {
-                impl #impl_generics #ident #ty_generics #where_clause {
-                    #(#methods)*
+        let mut trait_impls = vec![];
+
+        for (trait_name, trait_body) in self.traits().iter() {
+            let trait_ident = format_ident!("{}", trait_name);
+            trait_impls.push(quote! {
+                impl #impl_generics ::fieldx_plus::#trait_ident for #ident #ty_generics #where_clause {
+                    #(#trait_body)*
                 }
-            }
+            });
         }
-        else {
-            quote! {}
-        };
 
         Ok(quote! {
+            use ::fieldx_plus::traits::*;
             #[::fieldx::fxstruct( #( #fxs_args ),* )]
             #(#attrs)*
             #vis struct #ident #generics #where_clause {
                 #( #fields ),*
             }
-            #struct_impl
+            #( #trait_impls )*
         })
     }
 }

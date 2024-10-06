@@ -98,7 +98,7 @@
 
 pub mod traits;
 
-// pub use crate::traits::{Agent, App};
+pub use crate::traits::{Agent, Application, Child, Parent};
 pub use fieldx_plus_macros::fx_plus;
 
 #[macro_export]
