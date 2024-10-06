@@ -1,4 +1,4 @@
-use fieldx_plus::{agent_builder, fx_agent, fx_app, Agent};
+use fieldx_plus::{agent_build, child_build, fx_plus};
 use std::rc::Rc;
 use thiserror::Error;
 
@@ -14,7 +14,7 @@ impl MyError {
     }
 }
 
-#[fx_app(sync(off))]
+#[fx_plus(app, sync(off))]
 struct MyApp {
     #[fieldx(lazy, get(clone))]
     foo: String,
@@ -26,16 +26,34 @@ impl MyApp {
     }
 }
 
-#[fx_agent(MyApp, sync(off), unwrap(error(MyError, MyError::adhoc("something"))))]
-#[derive(Default)]
-struct AChild {
+#[fx_plus(agent(MyApp, unwrap(error(MyError, MyError::adhoc("something")))), parent, sync(off))]
+struct AnAgent {
     #[fieldx(get(clone), builder(into))]
     a_foo: String,
+
+    #[fieldx(lazy)]
+    child: AChild,
+}
+
+impl AnAgent {
+    fn foo(&self) -> Result<String, MyError> {
+        Ok(self.app()?.foo())
+    }
+
+    fn build_child(&self) -> AChild {
+        child_build!(self, AChild).expect("Can't create a child object")
+    }
+}
+
+#[fx_plus(child(AnAgent, unwrap(expect("Parent is unexpectedly gone"))), sync(off))]
+struct AChild {
+    #[fieldx(get(clone), lazy)]
+    b_foo: String,
 }
 
 impl AChild {
-    fn foo(&self) -> Result<String, MyError> {
-        Ok(self.app()?.foo())
+    fn build_b_foo(&self) -> String {
+        format!("b:{}", self.parent().a_foo())
     }
 }
 
@@ -43,15 +61,14 @@ impl AChild {
 fn new_app() {
     let app: Rc<MyApp> = MyApp::new();
     assert_eq!(app.foo(), "some str".to_string());
-    let a: Rc<MyApp> = app.app();
-    assert_eq!(a.foo(), "some str".to_string());
 
-    let ac = agent_builder!(
-        app, AChild =>
+    let ac = agent_build!(
+        app, AnAgent =>
         a_foo: "oki!";
     )
-    .build()
     .expect("Can't create a child object");
+
+    assert_eq!(ac.child().b_foo(), "b:oki!".to_string());
 
     assert_eq!(ac.foo().unwrap(), "some str".to_string());
     assert_eq!(ac.a_foo(), "oki!".to_string());

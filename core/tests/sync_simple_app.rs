@@ -1,7 +1,7 @@
-use fieldx_plus::{agent_builder, fx_agent, fx_app, Agent};
+use fieldx_plus::{agent_builder, fx_plus};
 use std::sync::Arc;
 
-#[fx_app(sync)]
+#[fx_plus(app, sync)]
 struct MyApp {
     #[fieldx(lazy, get(clone))]
     foo: String,
@@ -13,8 +13,7 @@ impl MyApp {
     }
 }
 
-#[fx_agent(MyApp, sync, unwrap)]
-#[derive(Default)]
+#[fx_plus(agent(MyApp, unwrap), sync)]
 struct AChild {
     #[fieldx(get(clone), builder(into))]
     a_foo: String,
@@ -30,8 +29,6 @@ impl AChild {
 fn new_app() {
     let app: Arc<MyApp> = MyApp::new();
     assert_eq!(app.foo(), "some str".to_string());
-    let a: Arc<MyApp> = app.app();
-    assert_eq!(a.foo(), "some str".to_string());
 
     let ac = agent_builder!(
         app, AChild =>

@@ -1,8 +1,10 @@
+use crate::traits::ProducerDescriptor;
 use darling::{ast::NestedMeta, util::Flag, FromMeta};
 use fieldx::fxstruct;
-use fieldx_aux::{validate_exclusives, FXNestingAttr, FXStringArg, FXTriggerHelper, FromNestAttr};
+use fieldx_aux::{validate_exclusives, FXBoolArg, FXNestingAttr, FXStringArg, FXTriggerHelper, FromNestAttr};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
+use std::marker::PhantomData;
 use syn::Meta;
 
 #[derive(Debug, Clone, Default)]
@@ -83,15 +85,18 @@ impl FXTriggerHelper for ErrorArg {
 #[fxstruct(default(off), get)]
 #[darling(and_then = Self::validate)]
 pub(crate) struct UnwrapArg {
-    off:    Flag,
-    expect: Option<FXStringArg>,
-    error:  Option<FXNestingAttr<ErrorArg>>,
-    map:    Option<FXNestingAttr<ErrorArg>>,
+    off:        Flag,
+    #[darling(rename = "expect")]
+    expect_arg: Option<FXStringArg>,
+    #[darling(rename = "error")]
+    error_arg:  Option<FXNestingAttr<ErrorArg>>,
+    #[darling(rename = "map")]
+    map_arg:    Option<FXNestingAttr<ErrorArg>>,
 }
 
 impl UnwrapArg {
     validate_exclusives! {
-        "drop handling": expect; error; map;
+        "drop handling": expect_arg as "expect"; error_arg as "error"; map_arg as "map";
     }
 
     fn validate(self) -> Result<Self, darling::Error> {
@@ -114,5 +119,54 @@ impl FromNestAttr for UnwrapArg {
 impl FXTriggerHelper for UnwrapArg {
     fn is_true(&self) -> bool {
         !self.off().is_present()
+    }
+}
+
+#[fxstruct(get, default(off))]
+#[derive(Debug, Clone)]
+pub(crate) struct ChildArgs<D> {
+    parent_type:   syn::Meta,
+    #[fieldx(optional, get(as_ref))]
+    rc_strong:     FXBoolArg,
+    #[fieldx(optional, get(as_ref))]
+    unwrap_parent: FXNestingAttr<UnwrapArg>,
+    _d:            PhantomData<D>,
+}
+
+#[derive(FromMeta, Debug)]
+struct _ChldArgs {
+    rc_strong:     Option<FXBoolArg>,
+    #[darling(rename = "unwrap")]
+    unwrap_parent: Option<FXNestingAttr<UnwrapArg>>,
+}
+
+impl<D: ProducerDescriptor> FromMeta for ChildArgs<D> {
+    fn from_list(items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
+        if items.len() < 1 {
+            return Err(darling::Error::custom(format!(
+                "Expected {} type as the first argument",
+                D::kind()
+            )));
+        }
+        let NestedMeta::Meta(parent_type) = items[0].clone()
+        else {
+            return Err(darling::Error::custom(format!("Expected {} type here", D::kind())).with_span(&items[0]));
+        };
+        let rest = &items[1..];
+
+        let chld_args = _ChldArgs::from_list(rest)?;
+
+        Ok(Self {
+            parent_type,
+            rc_strong: chld_args.rc_strong,
+            unwrap_parent: chld_args.unwrap_parent,
+            _d: PhantomData::<D>,
+        })
+    }
+}
+
+impl<D: ProducerDescriptor> ChildArgs<D> {
+    pub(crate) fn base_name(&self) -> &'static str {
+        D::base_name()
     }
 }
