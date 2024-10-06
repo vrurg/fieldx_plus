@@ -4,14 +4,14 @@ use crate::{
 };
 use darling::{ast, FromDeriveInput, FromMeta};
 use fieldx::fxstruct;
-use fieldx_aux::{FXBoolArg, FXHelper, FXHelperTrait, FXNestingAttr, FXTriggerHelper};
+use fieldx_aux::{FXBoolArg, FXHelper, FXHelperTrait, FXTriggerHelper};
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote, quote_spanned, ToTokens};
-use std::{collections::HashMap, sync::Mutex};
+use std::collections::HashMap;
 use syn::{spanned::Spanned, Meta};
 
 #[derive(Debug, Clone)]
-struct AppDescriptor {}
+pub(crate) struct AppDescriptor {}
 
 impl ProducerDescriptor for AppDescriptor {
     #[inline(always)]
@@ -31,7 +31,7 @@ impl ProducerDescriptor for AppDescriptor {
 }
 
 #[derive(Debug, Clone)]
-struct ParentDescriptor {}
+pub(crate) struct ParentDescriptor {}
 
 impl ProducerDescriptor for ParentDescriptor {
     #[inline(always)]
@@ -236,6 +236,12 @@ impl FXPlusProducer {
             (unwrap_or_error, return_type)
         }
         else {
+            self.add_to_trait(
+                &trait_name,
+                quote_spanned! {parent_type.span()=>
+                    type #rc_assoc = #rc_type<#parent_type>;
+                },
+            );
             (quote![], quote![::std::option::Option<#rc_type<#parent_type>>])
         })
     }
@@ -276,30 +282,29 @@ impl FXPlusProducer {
         serde_off: &Vec<TokenStream>,
     ) -> darling::Result<()> {
         let child_args_span = child_args.span();
-        let (unwrapping, parent_return_type) = self.child_params(child_args)?;
+        let (unwrapping, _parent_return_type) = self.child_params(child_args)?;
         let base_name = D::base_name();
         let parent_ident = format_ident!("{}", base_name, span = child_args_span);
         let parent_downgrade_ident = format_ident!("{}_downgrade", base_name, span = child_args_span);
         let parent_type = child_args.parent_type();
         let (rc_field_type, parent_field_name, parent_body, parent_downgrade_body) =
             self.child_method_bodies(child_args, unwrapping);
-        let (_rc_type, weak_type) = self.rc_type();
         self.struct_fields_mut().push(quote_spanned! {child_args_span=>
             #[fieldx(lazy(off), predicate(off), clearer(off), get(off), set(off)
                     #(, #serde_off )*, builder(#base_name))]
             #parent_field_name: #rc_field_type <#parent_type>
         });
 
-        let (trait_name, _rc_assoc, _weak_assoc) = D::child_trait();
+        let (trait_name, rc_assoc, weak_assoc) = D::child_trait();
         let trait_name = format_ident!("{}", trait_name, span = child_args_span);
         self.add_to_trait(
             &trait_name,
             quote_spanned! {child_args_span=>
-                fn #parent_ident(&self) -> #parent_return_type {
+                fn #parent_ident(&self) -> Self::#rc_assoc {
                     #parent_body
                 }
 
-                fn #parent_downgrade_ident(&self) -> #weak_type <#parent_type> {
+                fn #parent_downgrade_ident(&self) -> Self::#weak_assoc {
                     #parent_downgrade_body
                 }
             },
