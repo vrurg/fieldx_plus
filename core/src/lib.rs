@@ -28,9 +28,10 @@
 //! impl Application {
 //!     fn build_service(&self) -> NetService {
 //!         agent_build!(
-//!             self, NetService =>
-//!             port: 4242;
-//!             name: "app service";
+//!             self, NetService {
+//!                 port: 4242,
+//!                 name: "app service",
+//!             }
 //!         ).unwrap()
 //!     }
 //!
@@ -92,7 +93,7 @@
 //! specified.
 //!
 //! Helper macros `agent_build`, `agent_builder`, `child_build`, and `child_builder` are wrappers around builder
-//! pattern. I.e.  `agent_build!(self.app(), Agent => foo: 42; bar: "baz")` is actually a shortcut for
+//! pattern. I.e.  `agent_build!(self.app(), Agent { foo: 42, bar: "baz" })` is actually a shortcut for
 //! `Agent::builder().app(self.app()).foo(42).bar("baz").build()`. `agent_builder` is the same but without the final
 //! `build()` call.
 
@@ -103,24 +104,28 @@ pub use fieldx_plus_macros::fx_plus;
 
 #[macro_export]
 macro_rules! __fxplus_builder {
-    ($method:ident: $self:expr, $($ty:ident)::+ $( => $( $field:ident : $initializer:expr ; )* )? ) => {
+    ($method:ident: $self:expr, $($ty:ident)::+ $( { $( $field:ident : $initializer:expr ),* $(,)* } )? ) => {
             $($ty)::+ ::builder()
                 .$method( $self.__fxplus_myself_downgrade() )
                 $( $( .$field($initializer) )* )?
     }
 }
 
-// pub(crate) use m::fxplus_builder;
-
 #[macro_export]
 macro_rules! agent_builder {
+    ( $( $args:tt )+ ) => {
+        ::fieldx_plus::__fxplus_builder!(app: $( $args )+ )
+    };
     ($self:expr, $($ty:ident)::+ $( => $( $field:ident : $initializer:expr ; )* )? ) => {
-        ::fieldx_plus::__fxplus_builder!(app: $self, $($ty)::+ $( => $( $field : $initializer ; )* )?)
+        ::fieldx_plus::__fxplus_builder!(app: $self, $($ty)::+ $(  { $( $field : $initializer  ),* } )?)
     }
 }
 
 #[macro_export]
 macro_rules! agent_build {
+    ( $( $args:tt )+ ) => {
+        ::fieldx_plus::__fxplus_builder!(app: $( $args )+ ).build()
+    };
     ($self:expr, $($ty:ident)::+ $( => $( $field:ident : $initializer:expr ; )* )? ) => {
         ::fieldx_plus::__fxplus_builder!(app: $self, $($ty)::+ $( => $( $field : $initializer ; )* )?)
                 .build()
@@ -129,6 +134,9 @@ macro_rules! agent_build {
 
 #[macro_export]
 macro_rules! child_builder {
+    ( $( $args:tt )+ ) => {
+        ::fieldx_plus::__fxplus_builder!(parent: $( $args )+ )
+    };
     ($self:expr, $($ty:ident)::+ $( => $( $field:ident : $initializer:expr ; )* )? ) => {
         ::fieldx_plus::__fxplus_builder!(parent: $self, $($ty)::+ $( => $( $field : $initializer ; )* )?)
     }
@@ -136,6 +144,9 @@ macro_rules! child_builder {
 
 #[macro_export]
 macro_rules! child_build {
+    ( $( $args:tt )+ ) => {
+        ::fieldx_plus::__fxplus_builder!(parent: $( $args )+ ).build()
+    };
     ($self:expr, $($ty:ident)::+ $( => $( $field:ident : $initializer:expr ; )* )? ) => {
         ::fieldx_plus::__fxplus_builder!(parent: $self, $($ty)::+ $( => $( $field : $initializer ; )* )?)
             .build()

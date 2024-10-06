@@ -62,11 +62,7 @@ fn new_app() {
     let app: Rc<MyApp> = MyApp::new();
     assert_eq!(app.foo(), "some str".to_string());
 
-    let ac = agent_build!(
-        app, AnAgent =>
-        a_foo: "oki!";
-    )
-    .expect("Can't create a child object");
+    let ac = agent_build!(app, AnAgent { a_foo: "oki!" }).expect("Can't create a child object");
 
     assert_eq!(ac.child().b_foo(), "b:oki!".to_string());
 

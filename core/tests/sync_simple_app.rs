@@ -30,12 +30,9 @@ fn new_app() {
     let app: Arc<MyApp> = MyApp::new();
     assert_eq!(app.foo(), "some str".to_string());
 
-    let ac = agent_builder!(
-        app, AChild =>
-        a_foo: "oki!";
-    )
-    .build()
-    .expect("Can't create a child object");
+    let ac = agent_builder!(app, AChild { a_foo: "oki!" })
+        .build()
+        .expect("Can't create a child object");
 
     assert_eq!(ac.foo(), "some str".to_string());
     assert_eq!(ac.a_foo(), "oki!".to_string());
