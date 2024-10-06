@@ -239,7 +239,7 @@ impl FXPlusProducer {
             self.add_to_trait(
                 &trait_name,
                 quote_spanned! {parent_type.span()=>
-                    type #rc_assoc = #rc_type<#parent_type>;
+                    type #rc_assoc = ::std::option::Option< #rc_type<#parent_type> >;
                 },
             );
             (quote![], quote![::std::option::Option<#rc_type<#parent_type>>])
