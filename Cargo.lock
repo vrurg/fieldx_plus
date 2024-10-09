@@ -141,7 +141,7 @@ dependencies = [
 
 [[package]]
 name = "fieldx_plus"
-version = "0.1.1-beta.1"
+version = "0.1.1"
 dependencies = [
  "fieldx",
  "fieldx_aux",
@@ -151,7 +151,7 @@ dependencies = [
 
 [[package]]
 name = "fieldx_plus_macros"
-version = "0.1.1-beta.2"
+version = "0.1.1"
 dependencies = [
  "darling",
  "fieldx",
