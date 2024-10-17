@@ -2,10 +2,10 @@ use crate::traits::ProducerDescriptor;
 use darling::{ast::NestedMeta, util::Flag, FromMeta};
 use fieldx::fxstruct;
 use fieldx_aux::{validate_exclusives, FXBoolArg, FXNestingAttr, FXStringArg, FXTriggerHelper, FromNestAttr};
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream, TokenTree};
 use quote::{quote, ToTokens};
-use std::marker::PhantomData;
-use syn::Meta;
+use std::{marker::PhantomData, ops::Deref};
+use syn::{parse::Parse, spanned::Spanned, Meta, Token};
 
 #[derive(Debug, Clone, Default)]
 pub(crate) struct SlurpyArgs {
@@ -122,10 +122,10 @@ impl FXTriggerHelper for UnwrapArg {
     }
 }
 
-#[fxstruct(get, default(off))]
+#[fxstruct(get, no_new, default(off))]
 #[derive(Debug, Clone)]
-pub(crate) struct ChildArgsInner<D> {
-    parent_type:   syn::Meta,
+pub struct ChildArgsInner<D> {
+    parent_type:   syn::Type,
     #[fieldx(optional, get(as_ref))]
     rc_strong:     FXBoolArg,
     #[fieldx(optional, get(as_ref))]
@@ -133,7 +133,16 @@ pub(crate) struct ChildArgsInner<D> {
     _d:            PhantomData<D>,
 }
 
-impl<D: ProducerDescriptor> FromNestAttr for ChildArgsInner<D> {}
+impl<D> ChildArgsInner<D> {
+    fn new(parent_type: syn::Type, from_args: _ChldArgs) -> Self {
+        Self {
+            parent_type,
+            rc_strong: from_args.rc_strong,
+            unwrap_parent: from_args.unwrap_parent,
+            _d: PhantomData::<D>,
+        }
+    }
+}
 
 #[derive(FromMeta, Debug)]
 struct _ChldArgs {
@@ -142,35 +151,67 @@ struct _ChldArgs {
     unwrap_parent: Option<FXNestingAttr<UnwrapArg>>,
 }
 
-impl<D: ProducerDescriptor> FromMeta for ChildArgsInner<D> {
-    fn from_list(items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
-        if items.len() < 1 {
-            return Err(darling::Error::custom(format!(
-                "Expected {} type as the first argument",
-                D::kind()
-            )));
-        }
-        let NestedMeta::Meta(parent_type) = items[0].clone()
-        else {
-            return Err(darling::Error::custom(format!("Expected {} type here", D::kind())).with_span(&items[0]));
-        };
-        let rest = &items[1..];
-
-        let chld_args = _ChldArgs::from_list(rest)?;
-
-        Ok(Self {
-            parent_type,
-            rc_strong: chld_args.rc_strong,
-            unwrap_parent: chld_args.unwrap_parent,
-            _d: PhantomData::<D>,
-        })
-    }
-}
-
 impl<D: ProducerDescriptor> ChildArgsInner<D> {
     pub(crate) fn base_name(&self) -> &'static str {
         D::base_name()
     }
 }
 
-pub type ChildArgs<D> = FXNestingAttr<ChildArgsInner<D>>;
+#[derive(Debug, Clone)]
+pub struct ChildArgs<D: ProducerDescriptor> {
+    inner: ChildArgsInner<D>,
+    span:  Span,
+}
+
+impl<D: ProducerDescriptor> ChildArgs<D> {
+    pub fn span(&self) -> Span {
+        self.span.clone()
+    }
+}
+
+impl<D: ProducerDescriptor + std::fmt::Debug> Parse for ChildArgs<D> {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let Ok(parent_type) = syn::Type::parse(input)
+        else {
+            return Err(darling::Error::custom(format!("Expected a {} type here", D::kind()))
+                .with_span(&input.span())
+                .into());
+        };
+
+        let all = input.fork().cursor().token_stream().span();
+
+        input.step(|cursor| {
+            let rest = *cursor;
+            let Some((tt, next)) = rest.token_tree()
+            else {
+                return Ok(((), rest));
+            };
+            if let TokenTree::Punct(ref punct) = tt {
+                if punct.as_char() == ',' {
+                    return Ok(((), next));
+                }
+            }
+            Err(darling::Error::custom("expected `,`").with_span(&input.span()).into())
+        })?;
+
+        let ml = input
+            .parse_terminated(NestedMeta::parse, Token![,])?
+            .into_iter()
+            .collect::<Vec<NestedMeta>>();
+
+        let ca = _ChldArgs::from_list(&ml)?;
+
+        Ok(Self {
+            inner: ChildArgsInner::new(parent_type, ca),
+            span:  all.span(),
+        })
+    }
+}
+
+impl<D: ProducerDescriptor> Deref for ChildArgs<D> {
+    type Target = ChildArgsInner<D>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}

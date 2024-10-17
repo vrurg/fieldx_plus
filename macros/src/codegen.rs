@@ -4,7 +4,7 @@ use crate::{
 };
 use darling::{ast, FromDeriveInput, FromMeta};
 use fieldx::fxstruct;
-use fieldx_aux::{FXBoolArg, FXHelper, FXHelperTrait, FXTriggerHelper};
+use fieldx_aux::{FXBoolArg, FXHelper, FXHelperTrait, FXSynValue, FXTriggerHelper};
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote, quote_spanned, ToTokens};
 use std::collections::HashMap;
@@ -77,13 +77,13 @@ impl FXPlusStruct {
 #[derive(FromMeta, Debug, Clone)]
 pub(crate) struct FXPlusArgs {
     #[fieldx(optional, get(as_ref))]
-    agent:         ChildArgs<AppDescriptor>,
+    agent:         FXSynValue<ChildArgs<AppDescriptor>>,
     #[fieldx(optional, get(as_ref))]
     app:           FXBoolArg,
     #[fieldx(optional, get(as_ref))]
     parent:        FXBoolArg,
     #[fieldx(optional, get(as_ref))]
-    child:         ChildArgs<ParentDescriptor>,
+    child:         FXSynValue<ChildArgs<ParentDescriptor>>,
     #[fieldx(optional, get(as_ref))]
     builder:       SlurpyArgs,
     #[fieldx(optional, get(as_ref))]
