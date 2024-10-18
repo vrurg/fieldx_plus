@@ -142,9 +142,14 @@ impl<D> ChildArgsInner<D> {
             _d: PhantomData::<D>,
         }
     }
+
+    pub fn is_rc_strong(&self) -> bool {
+        self.rc_strong().map_or(false, |b| b.is_true())
+    }
 }
 
 #[derive(FromMeta, Debug)]
+#[darling(and_then = Self::validate)]
 struct _ChldArgs {
     rc_strong:     Option<FXBoolArg>,
     #[darling(rename = "unwrap")]
@@ -154,6 +159,15 @@ struct _ChldArgs {
 impl<D: ProducerDescriptor> ChildArgsInner<D> {
     pub(crate) fn base_name(&self) -> &'static str {
         D::base_name()
+    }
+}
+
+impl _ChldArgs {
+    validate_exclusives! {"strong/weak parent": rc_strong; unwrap_parent;}
+
+    fn validate(self) -> darling::Result<Self> {
+        self.validate_exclusives()?;
+        Ok(self)
     }
 }
 

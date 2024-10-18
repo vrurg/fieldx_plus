@@ -104,14 +104,14 @@ pub use fieldx_plus_macros::fx_plus;
 
 #[macro_export]
 macro_rules! __fxplus_builder {
-    ($method:ident: $self:expr, $($ty:ident)::+ $( { $( $field:ident : $initializer:expr ),* $(,)* } )? ) => {
+    ($method:ident, $conv_method:ident: $self:expr, $($ty:ident)::+ $( { $( $field:ident : $initializer:expr ),* $(,)* } )? ) => {
         $($ty)::+ ::builder()
-            .$method( $self.__fxplus_myself_downgrade() )
+            .$method( $( $ty:: )+ $conv_method( $self.__fxplus_myself_downgrade() ) )
             $( $( .$field($initializer) )* )?
     };
-    ($method:ident: $self:expr, $($ty:ident)::+ $( => $( $field:ident : $initializer:expr ; )* )? ) => {
+    ($method:ident, $conv_method:ident: $self:expr, $($ty:ident)::+ $( => $( $field:ident : $initializer:expr ; )* )? ) => {
         $($ty)::+ ::builder()
-            .$method( $self.__fxplus_myself_downgrade() )
+            .$method( $ty::$conv_method( $self ) )
             $( $( .$field($initializer) )* )?
     }
 }
@@ -119,41 +119,41 @@ macro_rules! __fxplus_builder {
 #[macro_export]
 macro_rules! agent_builder {
     ($self:expr, $($ty:ident)::+ $( => $( $field:ident : $initializer:expr ; )* )? ) => {
-        ::fieldx_plus::__fxplus_builder!(app: $self, $($ty)::+ $(  { $( $field : $initializer  ),* } )?)
+        ::fieldx_plus::__fxplus_builder!(app, __fxplus_app: $self, $($ty)::+ $(  { $( $field : $initializer  ),* } )?)
     };
     ( $( $args:tt )+ ) => {
-        ::fieldx_plus::__fxplus_builder!(app: $( $args )+ )
+        ::fieldx_plus::__fxplus_builder!(app, __fxplus_app: $( $args )+ )
     };
 }
 
 #[macro_export]
 macro_rules! agent_build {
     ($self:expr, $($ty:ident)::+ $( => $( $field:ident : $initializer:expr ; )* )? ) => {
-        ::fieldx_plus::__fxplus_builder!(app: $self, $($ty)::+ $( => $( $field : $initializer ; )* )?)
+        ::fieldx_plus::__fxplus_builder!(app, __fxplus_app: $self, $($ty)::+ $( => $( $field : $initializer ; )* )?)
                 .build()
     };
     ( $( $args:tt )+ ) => {
-        ::fieldx_plus::__fxplus_builder!(app: $( $args )+ ).build()
+        ::fieldx_plus::__fxplus_builder!(app, __fxplus_app: $( $args )+ ).build()
     };
 }
 
 #[macro_export]
 macro_rules! child_builder {
     ($self:expr, $($ty:ident)::+ $( => $( $field:ident : $initializer:expr ; )* )? ) => {
-        ::fieldx_plus::__fxplus_builder!(parent: $self, $($ty)::+ $( => $( $field : $initializer ; )* )?)
+        ::fieldx_plus::__fxplus_builder!(parent, __fxplus_parent: $self, $($ty)::+ $( => $( $field : $initializer ; )* )?)
     };
     ( $( $args:tt )+ ) => {
-        ::fieldx_plus::__fxplus_builder!(parent: $( $args )+ )
+        ::fieldx_plus::__fxplus_builder!(parent, __fxplus_parent: $( $args )+ )
     };
 }
 
 #[macro_export]
 macro_rules! child_build {
     ($self:expr, $($ty:ident)::+ $( => $( $field:ident : $initializer:expr ; )* )? ) => {
-        ::fieldx_plus::__fxplus_builder!(parent: $self, $($ty)::+ $( => $( $field : $initializer ; )* )?)
+        ::fieldx_plus::__fxplus_builder!(parent, __fxplus_parent: $self, $($ty)::+ $( => $( $field : $initializer ; )* )?)
             .build()
     };
     ( $( $args:tt )+ ) => {
-        ::fieldx_plus::__fxplus_builder!(parent: $( $args )+ ).build()
+        ::fieldx_plus::__fxplus_builder!(parent, __fxplus_parent: $( $args )+ ).build()
     };
 }
