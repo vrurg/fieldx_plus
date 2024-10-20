@@ -1,6 +1,6 @@
-[![Rust](https://github.com/vrurg/fieldx/actions/workflows/fieldx.yml/badge.svg)](https://github.com/vrurg/fieldx/actions/workflows/fieldx.yml)
-![License](https://img.shields.io/github/license/vrurg/fieldx)
-![Crates.io Version](https://img.shields.io/crates/v/fieldx)
+[![Workflow Status](https://github.com/vrurg/fieldx_plus/workflows/main/badge.svg)](https://github.com/vrurg/fieldx_plus/actions?query=workflow%3A%22main%22)
+![License](https://img.shields.io/github/license/vrurg/fieldx_plus)
+![Crates.io Version](https://img.shields.io/crates/v/fieldx_plus)
 
 # fieldx_plus v0.1.2
 
