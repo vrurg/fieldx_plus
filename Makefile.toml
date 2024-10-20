@@ -14,25 +14,25 @@ extend = "build-tools/makefile.toml"
     category    = "Test"
     command     = "cargo"
     description = "Test with only the default features"
-    toolchain   = "${__FIELDX_DEFAULT_TOOLCHAIN__}"
+    toolchain   = "${__MAKE_DEFAULT_TOOLCHAIN__}"
 
 [tasks.test-serde]
     args        = ["test", "--workspace", "--features", "serde"]
     category    = "Test"
     command     = "cargo"
     description = "Test with 'serde' feature"
-    toolchain   = "${__FIELDX_DEFAULT_TOOLCHAIN__}"
+    toolchain   = "${__MAKE_DEFAULT_TOOLCHAIN__}"
 
 [tasks.test-send_guard]
     args        = ["test", "--workspace", "--features", "send_guard"]
     category    = "Test"
     command     = "cargo"
     description = "Test with 'serde' feature"
-    toolchain   = "${__FIELDX_DEFAULT_TOOLCHAIN__}"
+    toolchain   = "${__MAKE_DEFAULT_TOOLCHAIN__}"
 
 [tasks.test-all-features]
     args        = ["test", "--workspace", "--all-features"]
     category    = "Test"
     command     = "cargo"
     description = "Test with all features enabled"
-    toolchain   = "${__FIELDX_DEFAULT_TOOLCHAIN__}"
+    toolchain   = "${__MAKE_DEFAULT_TOOLCHAIN__}"
