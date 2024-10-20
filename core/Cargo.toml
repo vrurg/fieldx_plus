@@ -23,3 +23,6 @@
 [features]
     send_guard = ["fieldx/send_guard"]
     serde      = ["fieldx/serde"]
+
+[badges]
+    github = { repository = "vrurg/fieldx_plus", workflow = "CI" }
