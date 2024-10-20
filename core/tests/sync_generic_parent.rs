@@ -1,7 +1,7 @@
 use fieldx_plus::{child_build, fx_plus};
 use std::sync::Arc;
 
-#[fx_plus(parent, sync, get)]
+#[fx_plus(parent, sync, get, builder(into))]
 struct MyParent<T, S>
 where
     T: Default,
@@ -23,21 +23,26 @@ where
 impl<T, S> MyChild<T, S>
 where
     T: Default + Copy,
-    S: Default,
+    S: Default + Clone,
 {
     fn foo(&self) -> T {
         let p = self.parent();
         *p.v()
     }
+
+    fn bar(&self) -> S {
+        self.parent().v2().clone()
+    }
 }
 
 #[test]
 fn generic_parent() {
-    let parent: Arc<MyParent<i32, String>> = MyParent::new();
-    assert_eq!(*parent.v(), 0);
+    let parent: Arc<MyParent<i32, String>> = MyParent::builder().v(42).v2("The Answer").build().unwrap();
+    assert_eq!(*parent.v(), 42);
 
     let child = child_build!(parent, MyChild { v: "42?".into() }).expect("Can't create a child object");
 
     assert_eq!(child.v(), &"42?".to_string());
-    assert_eq!(child.foo(), 0);
+    assert_eq!(child.bar(), "The Answer".to_string());
+    assert_eq!(child.foo(), 42);
 }
