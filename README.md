@@ -2,7 +2,7 @@
 ![License](https://img.shields.io/github/license/vrurg/fieldx)
 ![Crates.io Version](https://img.shields.io/crates/v/fieldx)
 
-# fieldx_plus v0.1.1
+# fieldx_plus v0.1.2
 
 This crate is intended for implementing some design patterns, based on [`fieldx`](https://crates.io/crates/fieldx)
 crate. At the moment it is only Application/Agent and Parent/Child patterns. Both are basically the same thing

@@ -1,14 +1,16 @@
 # Changelog
 
-## [unreleased]
+## [v0.1.2] - 2024-10-20
 
 ### Features
 
 - Add traits Parent, Application, Child, and Agent
+- Support for generic parent/app
 
 ### Bug Fixes
 
 - A compilation error with `serde` feature
+- Make `rc_strong` finally work
 
 ### Refactor
 
