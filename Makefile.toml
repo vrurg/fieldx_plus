@@ -1,113 +1,38 @@
+extend = "build-tools/makefile.toml"
+
 [env]
     CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
-    __FIELDX_DEFAULT_TOOLCHAIN__         = { value = "nightly", condition = { env_not_set = ["__FIELDX_DEFAULT_TOOLCHAIN__"] } }
-    __FIELDX_TASK__                      = { value = "test", condition = { env_not_set = ["__FIELDX_TASK__"] } }
-    __FIELDX_TOOLCHAINS__                = "1.77 1.78 stable beta nightly"
+    __MAKE_README_CRATE_ROOT__           = "core"
+    __MAKE_TEST_TASKS__                  = "test-default test-serde test-send_guard test-all-features"
+    __MAKE_TOOLCHAINS__                  = "1.77 1.78 stable beta nightly"
 
 [config]
     default_to_workspace = false
-
-[tasks.test]
-    category     = "Test"
-    clear        = true
-    dependencies = ["test-default", "test-serde", "test-send_guard", "test-all-features"]
-    description  = "Extensive testing"
-
-[tasks.test-versions]
-    description = "TESTING SUPPORTED Rust VERSIONS"
-    script = '''
-toolchain_list = array %{__FIELDX_TOOLCHAINS__}
-
-for toolchain in ${toolchain_list}
-    echo Testing toolchain '${toolchain}'
-    set_env __FIELDX_DEFAULT_TOOLCHAIN__ ${toolchain}
-    rm Cargo.lock
-    cm_run_task ${__FIELDX_TASK__}
-end
-'''
-    script_runner = "@duckscript"
-
-[tasks.update-versions]
-    description = "Updating .stderr for all versions"
-    env         = { TRYBUILD = "overwrite", __FIELDX_TASK__ = "test-compilation" }
-    run_task    = { name = ["test-versions"] }
 
 [tasks.test-default]
     args        = ["test", "--workspace"]
     category    = "Test"
     command     = "cargo"
     description = "Test with only the default features"
-    toolchain   = "${__FIELDX_DEFAULT_TOOLCHAIN__}"
+    toolchain   = "${__MAKE_DEFAULT_TOOLCHAIN__}"
 
 [tasks.test-serde]
     args        = ["test", "--workspace", "--features", "serde"]
     category    = "Test"
     command     = "cargo"
     description = "Test with 'serde' feature"
-    toolchain   = "${__FIELDX_DEFAULT_TOOLCHAIN__}"
+    toolchain   = "${__MAKE_DEFAULT_TOOLCHAIN__}"
 
 [tasks.test-send_guard]
     args        = ["test", "--workspace", "--features", "send_guard"]
     category    = "Test"
     command     = "cargo"
     description = "Test with 'serde' feature"
-    toolchain   = "${__FIELDX_DEFAULT_TOOLCHAIN__}"
+    toolchain   = "${__MAKE_DEFAULT_TOOLCHAIN__}"
 
 [tasks.test-all-features]
     args        = ["test", "--workspace", "--all-features"]
     category    = "Test"
     command     = "cargo"
     description = "Test with all features enabled"
-    toolchain   = "${__FIELDX_DEFAULT_TOOLCHAIN__}"
-
-[tasks.test-compilation]
-    description = "Run only the compilation test"
-    script = '''
-echo Skipping compilation test for ${__FIELDX_DEFAULT_TOOLCHAIN__} in ${CARGO_MAKE_WORKING_DIRECTORY}
-'''
-    script_runner = "@duckscript"
-    workspace = true
-
-[tasks.depends]
-    description = "Install necessary dependencies and tools"
-    script = '''
-echo "Installing dependencies"
-exec cargo install cargo-readme
-'''
-    script_runner = "@duckscript"
-
-[tasks.doc]
-    description = "Build documentation"
-    script = '''
-readme_content = exec --fail-on-error cargo readme -r core --template ../README.tpl
-writefile ./README.md ${readme_content.stdout}
-'''
-    script_runner = "@duckscript"
-
-[tasks.publish]
-    clear = true
-    dependencies = ["test-versions", "doc"]
-    description = "Publish on crates.io"
-    script = '''
-print -bgc red -c black " ► "
-print -bgc black -c white " Do you want to publish the crates? "
-print -s bold "(y/N)"
-echo " "
-reply = read
-reply = lowercase ${reply}
-if eq ${reply} "y"
-    exec --fail-on-error cargo release -x --no-confirm
-else
-    echo "Won't publish."
-end
-'''
-    script_runner = "@duckscript"
-
-[tasks.pre-release]
-    clear = true
-    description = "Produce CHANGELOG.md"
-    script = """
-cd ${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}
-exec --fail-on-error git cliff -o CHANGELOG.md --tag ${CARGO_RELEASE_VERSION}
-"""
-    script_runner = "@duckscript"
+    toolchain   = "${__MAKE_DEFAULT_TOOLCHAIN__}"
