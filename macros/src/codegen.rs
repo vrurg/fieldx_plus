@@ -77,24 +77,21 @@ impl FXPlusStruct {
 #[derive(FromMeta, Debug, Clone)]
 pub(crate) struct FXPlusArgs {
     #[fieldx(optional, get(as_ref))]
-    agent:         FXSynValue<ChildArgs<AppDescriptor>>,
+    agent:      FXSynValue<ChildArgs<AppDescriptor>>,
     #[fieldx(optional, get(as_ref))]
-    app:           FXBoolArg,
+    app:        FXBoolArg,
     #[fieldx(optional, get(as_ref))]
-    parent:        FXBoolArg,
+    parent:     FXBoolArg,
     #[fieldx(optional, get(as_ref))]
-    child:         FXSynValue<ChildArgs<ParentDescriptor>>,
+    child:      FXSynValue<ChildArgs<ParentDescriptor>>,
     #[fieldx(optional, predicate, get(as_ref))]
-    builder:       SlurpyArgs,
+    builder:    SlurpyArgs,
     #[fieldx(optional, get(as_ref))]
-    #[darling(rename = "default")]
-    needs_default: FXBoolArg,
+    rc:         FXHelper,
     #[fieldx(optional, get(as_ref))]
-    rc:            FXHelper,
-    #[fieldx(optional, get(as_ref))]
-    sync:          FXBoolArg,
+    sync:       FXBoolArg,
     #[darling(flatten)]
-    extra_args:    SlurpyArgs,
+    extra_args: SlurpyArgs,
 }
 
 #[fxstruct(no_new)]
@@ -408,11 +405,6 @@ impl FXPlusProducer {
             let builder_span = args.builder().unwrap().span();
             let builder_args = args.builder().unwrap();
             fxs_args.push(quote_spanned! {builder_span=> builder(#builder_args)});
-        }
-
-        if args.needs_default.as_ref().map_or(true, |nd| nd.is_true()) {
-            let span = args.needs_default().map_or_else(Span::call_site, |nd| nd.span());
-            fxs_args.push(quote_spanned! {span=> default});
         }
 
         let extra_args = args.extra_args.to_token_stream();
