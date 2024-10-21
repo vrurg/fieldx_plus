@@ -104,6 +104,9 @@ pub(crate) struct FXPlusProducer {
 
     #[fieldx(inner_mut, get_mut)]
     traits: HashMap<syn::Type, Vec<TokenStream>>,
+
+    #[fieldx(inner_mut, get_mut)]
+    trait_spans: HashMap<syn::Type, Span>,
 }
 
 impl FXPlusProducer {
@@ -113,6 +116,7 @@ impl FXPlusProducer {
             plus_struct,
             struct_fields: Default::default(),
             traits: Default::default(),
+            trait_spans: Default::default(),
         }
     }
 
@@ -121,6 +125,12 @@ impl FXPlusProducer {
         let mut traits = self.traits_mut();
         let entry = traits.entry(trait_name.clone()).or_default();
         entry.push(tt);
+        Ok(())
+    }
+
+    fn set_trait_span<T: ToTokens>(&self, trait_name: &T, span: Span) -> darling::Result<()> {
+        let trait_name: syn::Type = syn::parse2(trait_name.to_token_stream())?;
+        self.trait_spans_mut().insert(trait_name, span);
         Ok(())
     }
 
@@ -320,6 +330,8 @@ impl FXPlusProducer {
         let (trait_name, rc_assoc, weak_assoc, fxp_assoc) = D::child_trait();
         let trait_name = format_ident!("{}", trait_name, span = child_args_span);
 
+        self.set_trait_span(&trait_name, child_args_span)?;
+
         let fxp_body = if child_args.is_rc_strong() {
             let span = child_args.rc_strong().map_or_else(Span::call_site, |r| r.span());
             let (_, weak_type) = self.rc_type();
@@ -384,7 +396,7 @@ impl FXPlusProducer {
             .or_else(|| args.parent().map(|p| p.span()))
             .unwrap_or_else(Span::call_site);
 
-        if let Some(ref rc) = args.rc {
+        if let Some(ref rc) = args.rc() {
             fxs_args.push(rc.to_token_stream());
         }
         else if is_app || is_parent {
@@ -424,6 +436,7 @@ impl FXPlusProducer {
             let (_, weak_type) = self.rc_type();
             let myself_downgrade = format_ident!("{}_downgrade", myself_name);
             let trait_name = format_ident!("{}", "Parent", span = app_parent_span);
+            self.set_trait_span(&trait_name, app_parent_span)?;
             self.add_to_trait(
                 &trait_name,
                 quote_spanned! {app_parent_span=> type WeakSelf = #weak_type<Self>;},
@@ -447,7 +460,8 @@ impl FXPlusProducer {
         let mut trait_impls = vec![];
 
         for (trait_name, trait_body) in self.traits().iter() {
-            trait_impls.push(quote! {
+            let trait_span = self.trait_spans().get(trait_name).unwrap().clone();
+            trait_impls.push(quote_spanned! {trait_span=>
                 impl #impl_generics ::fieldx_plus::#trait_name for #ident #ty_generics #where_clause {
                     #(#trait_body)*
                 }
