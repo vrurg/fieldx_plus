@@ -2,7 +2,7 @@
 [![License](https://img.shields.io/github/license/vrurg/fieldx_plus)](https://github.com/vrurg/fieldx_plus/blob/main/LICENSE)
 [![Crates.io Version](https://img.shields.io/crates/v/fieldx_plus)](https://crates.io/crates/fieldx_plus)
 
-# fieldx_plus v0.1.2
+# fieldx_plus v0.1.3
 
 This crate is intended for implementing some design patterns, based on [`fieldx`](https://crates.io/crates/fieldx)
 crate. At the moment it is only Application/Agent and Parent/Child patterns. Both are basically the same thing
@@ -73,8 +73,8 @@ fn main() {
 
 Here is a quick breakdown for it:
 
-`fx_plus` is an extender to `fieldx::fxstruct` attribute. As such, it takes all the arguments, `fxstruct` take and
-adds of couple of its own. But be aware that it overrides some of `fxstruct` argument:
+`fx_plus` is an extender to `fieldx::fxstruct` attribute. As such, it takes all the arguments, `fxstruct` takes and
+adds of couple of its own. But be aware that it overrides some of `fxstruct` arguments:
 
 - with `app` or `parent` `fxstruct(rc)` is enforced
 - with `agent` or `child` it sets `fxstruct(no_new, builder)`; setting additional parameters with the `builder` are
