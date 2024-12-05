@@ -4,7 +4,7 @@ use crate::{
 };
 use darling::{ast, FromDeriveInput, FromMeta};
 use fieldx::fxstruct;
-use fieldx_aux::{FXBoolArg, FXHelper, FXHelperTrait, FXSynValue, FXTriggerHelper};
+use fieldx_aux::{FXBool, FXHelper, FXHelperTrait, FXSynValue, FXTriggerHelper};
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote, quote_spanned, ToTokens};
 use std::collections::HashMap;
@@ -79,9 +79,9 @@ pub(crate) struct FXPlusArgs {
     #[fieldx(optional, get(as_ref))]
     agent:      FXSynValue<ChildArgs<AppDescriptor>>,
     #[fieldx(optional, get(as_ref))]
-    app:        FXBoolArg,
+    app:        FXBool,
     #[fieldx(optional, get(as_ref))]
-    parent:     FXBoolArg,
+    parent:     FXBool,
     #[fieldx(optional, get(as_ref))]
     child:      FXSynValue<ChildArgs<ParentDescriptor>>,
     #[fieldx(optional, predicate, get(as_ref))]
@@ -89,7 +89,7 @@ pub(crate) struct FXPlusArgs {
     #[fieldx(optional, get(as_ref))]
     rc:         FXHelper,
     #[fieldx(optional, get(as_ref))]
-    sync:       FXBoolArg,
+    sync:       FXBool,
     #[darling(flatten)]
     extra_args: SlurpyArgs,
 }

@@ -19,12 +19,14 @@
 //!     AppIsGone
 //! }
 //!
+//! # #[cfg(feature = "sync")]
 //! #[fx_plus(app, sync)]
 //! struct Application {
 //!     #[fieldx(lazy, get)]
 //!     service: NetService,
 //! }
 //!
+//! # #[cfg(feature = "sync")]
 //! impl Application {
 //!     fn build_service(&self) -> NetService {
 //!         agent_build!(
@@ -45,6 +47,7 @@
 //!     }
 //! }
 //!
+//! # #[cfg(feature = "sync")]
 //! #[fx_plus(agent(Application, unwrap(error(AppError, AppError::AppIsGone))), sync)]
 //! struct NetService {
 //!     port: u16,
@@ -52,6 +55,7 @@
 //!     name: String,
 //! }
 //!
+//! # #[cfg(feature = "sync")]
 //! impl NetService {
 //!     pub fn launch(&self) -> Result<(), AppError> {
 //!         let app = self.app()?;
@@ -62,6 +66,7 @@
 //! }
 //!
 //! fn main() {
+//! # #[cfg(feature = "sync")]
 //!     Application::run();
 //! }
 //! ```

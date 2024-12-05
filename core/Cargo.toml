@@ -13,16 +13,18 @@
 
 [dependencies]
     fieldx             = { workspace = true }
-    fieldx_aux         = { workspace = true }
     fieldx_plus_macros = { workspace = true }
 
 [dev-dependencies]
-    fieldx    = { workspace = true }
-    thiserror = { workspace = true }
+    fieldx      = { workspace = true, features = ["sync"] }
+    parking_lot = { version = "0.12" }
+    thiserror   = { workspace = true }
 
 [features]
+    async      = ["fieldx/async"]
     send_guard = ["fieldx/send_guard"]
     serde      = ["fieldx/serde"]
+    sync       = ["fieldx/sync"]
 
 [badges]
     github = { repository = "vrurg/fieldx_plus", workflow = "CI" }

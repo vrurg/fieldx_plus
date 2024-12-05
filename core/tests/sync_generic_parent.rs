@@ -1,3 +1,4 @@
+#![cfg(feature = "sync")]
 use fieldx_plus::{child_build, fx_plus};
 use std::sync::Arc;
 

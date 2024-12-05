@@ -1,3 +1,4 @@
+#![cfg(feature = "sync")]
 use fieldx_plus::{agent_builder, fx_plus};
 use std::sync::Arc;
 
@@ -28,7 +29,7 @@ impl AChild {
 #[test]
 fn new_app() {
     let app: Arc<MyApp> = MyApp::new();
-    assert_eq!(app.foo(), "some str".to_string());
+    assert_eq!(app.foo(), "some str".to_string(), "lazily initialized using app object");
 
     let ac = agent_builder!(app, AChild { a_foo: "oki!" })
         .build()

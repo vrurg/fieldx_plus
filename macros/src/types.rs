@@ -1,7 +1,7 @@
 use crate::traits::ProducerDescriptor;
 use darling::{ast::NestedMeta, util::Flag, FromMeta};
 use fieldx::fxstruct;
-use fieldx_aux::{validate_exclusives, FXBoolArg, FXNestingAttr, FXStringArg, FXTriggerHelper, FromNestAttr};
+use fieldx_aux::{validate_exclusives, FXBool, FXNestingAttr, FXString, FXTriggerHelper, FromNestAttr};
 use proc_macro2::{Span, TokenStream, TokenTree};
 use quote::{quote, ToTokens};
 use std::{marker::PhantomData, ops::Deref};
@@ -87,7 +87,7 @@ impl FXTriggerHelper for ErrorArg {
 pub(crate) struct UnwrapArg {
     off:        Flag,
     #[darling(rename = "expect")]
-    expect_arg: Option<FXStringArg>,
+    expect_arg: Option<FXString>,
     #[darling(rename = "error")]
     error_arg:  Option<FXNestingAttr<ErrorArg>>,
     #[darling(rename = "map")]
@@ -127,7 +127,7 @@ impl FXTriggerHelper for UnwrapArg {
 pub struct ChildArgsInner<D> {
     parent_type:   syn::Type,
     #[fieldx(optional, get(as_ref))]
-    rc_strong:     FXBoolArg,
+    rc_strong:     FXBool,
     #[fieldx(optional, get(as_ref))]
     unwrap_parent: FXNestingAttr<UnwrapArg>,
     _d:            PhantomData<D>,
@@ -151,7 +151,7 @@ impl<D> ChildArgsInner<D> {
 #[derive(FromMeta, Debug)]
 #[darling(and_then = Self::validate)]
 struct _ChldArgs {
-    rc_strong:     Option<FXBoolArg>,
+    rc_strong:     Option<FXBool>,
     #[darling(rename = "unwrap")]
     unwrap_parent: Option<FXNestingAttr<UnwrapArg>>,
 }

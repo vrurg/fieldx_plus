@@ -15,7 +15,6 @@
     darling     = { workspace = true }
     fieldx      = { workspace = true }
     fieldx_aux  = { workspace = true }
-    once_cell   = { workspace = true, features = ["parking_lot"] }
     proc-macro2 = { workspace = true }
     quote       = { workspace = true }
     syn         = { workspace = true }
@@ -24,4 +23,7 @@
     proc-macro = true
 
 [features]
-    serde = []
+    async      = ["fieldx/async"]
+    send_guard = ["fieldx/send_guard"]
+    serde      = []
+    sync       = ["fieldx/sync"]
