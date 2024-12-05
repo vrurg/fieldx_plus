@@ -73,8 +73,8 @@
 //!
 //! Here is a quick breakdown for it:
 //!
-//! `fx_plus` is an extender to `fieldx::fxstruct` attribute. As such, it takes all the arguments, `fxstruct` take and
-//! adds of couple of its own. But be aware that it overrides some of `fxstruct` argument:
+//! `fx_plus` is an extender to `fieldx::fxstruct` attribute. As such, it takes all the arguments, `fxstruct` takes and
+//! adds of couple of its own. But be aware that it overrides some of `fxstruct` arguments:
 //!
 //! - with `app` or `parent` `fxstruct(rc)` is enforced
 //! - with `agent` or `child` it sets `fxstruct(no_new, builder)`; setting additional parameters with the `builder` are
