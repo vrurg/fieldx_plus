@@ -225,16 +225,17 @@ impl FXPlusProducer {
                     },
                 )?;
 
-                quote![.ok_or(#expr)]
+                quote_spanned![error.span()=> .ok_or(#expr)]
             }
             else if let Some(map) = unwrap_arg.map_arg() {
                 let error_type = map.error_type().to_token_stream();
+                let span = map.span();
                 let expr = match map.expr() {
                     Meta::List(ref call) => quote![.#call],
-                    Meta::Path(ref method) => quote![.#method()],
+                    Meta::Path(ref method) => quote![.#method ()],
                     _ => panic!("It's an internal problem: name-value must not appear here!"),
                 };
-                return_type = quote_spanned![map.span()=> Result<#rc_type<#parent_type>, #error_type>];
+                return_type = quote_spanned![span=> Result<#rc_type<#parent_type>, #error_type>];
 
                 self.add_to_trait(
                     &trait_name,
@@ -243,7 +244,7 @@ impl FXPlusProducer {
                     },
                 )?;
 
-                quote![map.span()=> .ok_or_else(|| self #expr)]
+                quote_spanned![span=> .ok_or_else(|| self #expr)]
             }
             else {
                 self.add_to_trait(
@@ -264,7 +265,8 @@ impl FXPlusProducer {
                     type #rc_assoc = #rc_type<#parent_type>;
                 },
             )?;
-            (quote![], quote![#rc_type<#parent_type>])
+            let span = child_args.rc_strong().map_or_else(Span::call_site, |r| r.span());
+            (quote![], quote_spanned![span=> #rc_type<#parent_type>])
         }
         else {
             self.add_to_trait(

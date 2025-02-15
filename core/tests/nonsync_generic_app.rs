@@ -2,7 +2,7 @@ use fieldx_plus::{agent_build, child_build, fx_plus};
 use std::rc::Rc;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 enum MyError {
     #[error("The app object is gone!")]
     AppGone,
@@ -15,6 +15,7 @@ impl MyError {
 }
 
 #[fx_plus(app, sync(off), builder(into))]
+#[derive(Debug)]
 struct MyApp<T>
 where
     T: Default,
@@ -63,6 +64,15 @@ impl AChild {
     }
 }
 
+#[fx_plus(agent(MyApp<String>, unwrap(map(MyError, when_no_app))), parent, sync(off))]
+struct AnotherAgent {}
+
+impl AnotherAgent {
+    fn when_no_app(&self) -> MyError {
+        MyError::AppGone
+    }
+}
+
 #[test]
 fn new_app() {
     let app: Rc<MyApp<String>> = MyApp::builder().foo("Foo").build().unwrap();
@@ -74,4 +84,14 @@ fn new_app() {
 
     assert_eq!(ac.foo().unwrap(), "Foo".to_string());
     assert_eq!(ac.a_foo(), "oki!".to_string());
+}
+
+#[test]
+fn app_gone() {
+    let ac = {
+        let app: Rc<MyApp<String>> = MyApp::builder().foo("Foo").build().unwrap();
+        agent_build!(app, AnotherAgent).expect("Can't create a child object")
+    };
+
+    assert_eq!(ac.app().unwrap_err(), MyError::AppGone);
 }
