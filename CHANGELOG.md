@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.1.3] - 2024-12-05
+## [v0.1.4] - 2025-02-15
 
 ### Features
 
@@ -14,6 +14,7 @@
 - Make `rc_strong` finally work
 - Don't handle the `default()` argument manually
 - Try improving error messaging
+- Incorrect code generation for unwrap error mapping
 
 ### Refactor
 
