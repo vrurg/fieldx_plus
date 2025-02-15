@@ -4,7 +4,7 @@ extend = "build-tools/makefile.toml"
     CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
     __MAKE_README_CRATE_ROOT__           = "core"
     __MAKE_TEST_TASKS__                  = "test-default test-combinations"
-    __MAKE_TOOLCHAINS__                  = "1.77 1.78 stable beta nightly"
+    __MAKE_TOOLCHAINS__                  = "1.77 stable beta nightly"
 
 [config]
     default_to_workspace = false
