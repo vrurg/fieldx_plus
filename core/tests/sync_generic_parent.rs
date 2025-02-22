@@ -41,7 +41,7 @@ fn generic_parent() {
     let parent: Arc<MyParent<i32, String>> = MyParent::builder().v(42).v2("The Answer").build().unwrap();
     assert_eq!(*parent.v(), 42);
 
-    let child = child_build!(parent, MyChild { v: "42?".into() }).expect("Can't create a child object");
+    let child = child_build!(parent, MyChild::<i32, String> { v: "42?".into() }).expect("Can't create a child object");
 
     assert_eq!(child.v(), &"42?".to_string());
     assert_eq!(child.bar(), "The Answer".to_string());
