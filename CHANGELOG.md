@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.1.4] - 2025-02-15
+## [v0.1.5] - 2025-02-22
 
 ### Features
 
@@ -15,6 +15,7 @@
 - Don't handle the `default()` argument manually
 - Try improving error messaging
 - Incorrect code generation for unwrap error mapping
+- `_build` and `_builder` macros to support parameterized types
 
 ### Refactor
 
