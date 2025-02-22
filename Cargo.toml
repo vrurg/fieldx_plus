@@ -1,11 +1,12 @@
 [workspace.package]
-    authors      = ["Vadim Belman"]
-    categories   = ["development-tools::procedural-macro-helpers", "rust-patterns"]
-    edition      = "2021"
-    exclude      = ["Makefile.toml", "release.toml"]
-    keywords     = ["lazy", "field", "macro", "builder", "struct"]
-    license-file = "LICENSE"
-    repository   = "https://github.com/vrurg/fieldx_plus.git"
+    authors       = ["Vadim Belman"]
+    categories    = ["development-tools::procedural-macro-helpers", "rust-patterns"]
+    documentation = "https://docs.rs/fieldx_plus"
+    edition       = "2021"
+    exclude       = ["Makefile.toml", "release.toml"]
+    keywords      = ["lazy", "field", "macro", "builder", "struct"]
+    license-file  = "LICENSE"
+    repository    = "https://github.com/vrurg/fieldx_plus.git"
 
 [workspace]
     members  = ["core", "macros"]
@@ -15,8 +16,8 @@
     darling            = ">=0.20.7"
     fieldx             = { version = ">=0.1.8" }
     fieldx_aux         = { version = ">=0.1.8" }
-    fieldx_plus        = { version = "0.1.5", path = "core" }
-    fieldx_plus_macros = { version = "0.1.5", path = "macros" }
+    fieldx_plus        = { version = "0.1.6-beta.1", path = "core" }
+    fieldx_plus_macros = { version = "0.1.6-beta.1", path = "macros" }
     once_cell          = "1.20"
     proc-macro2        = "1.0"
     quote              = "1.0"
