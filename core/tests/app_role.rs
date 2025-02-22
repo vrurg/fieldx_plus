@@ -30,6 +30,6 @@ where
 #[test]
 fn base() {
     let app = MyApp::new();
-    let child = agent_build!(app, AChild).unwrap();
+    let child = agent_build!(app, AChild<MyApp>).unwrap();
     assert_eq!(child.check_cfg(), "app cfg");
 }
