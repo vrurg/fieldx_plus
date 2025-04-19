@@ -1,4 +1,4 @@
-extend = "build-tools/makefile.toml"
+extend = "build-tools/std-makefile.toml"
 
 [env]
     CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
