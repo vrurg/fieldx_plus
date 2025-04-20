@@ -1,11 +1,28 @@
 use crate::traits::ProducerDescriptor;
-use darling::{ast::NestedMeta, util::Flag, FromMeta};
+
+use darling::ast::NestedMeta;
+use darling::util::Flag;
+use darling::FromMeta;
 use fieldx::fxstruct;
-use fieldx_aux::{validate_exclusives, FXBool, FXNestingAttr, FXString, FXTriggerHelper, FromNestAttr};
-use proc_macro2::{Span, TokenStream, TokenTree};
-use quote::{quote, ToTokens};
-use std::{marker::PhantomData, ops::Deref};
-use syn::{parse::Parse, spanned::Spanned, Meta, Token};
+use fieldx_aux::validate_exclusives;
+use fieldx_aux::FXBool;
+use fieldx_aux::FXNestingAttr;
+use fieldx_aux::FXOrig;
+use fieldx_aux::FXProp;
+use fieldx_aux::FXSetState;
+use fieldx_aux::FXString;
+use fieldx_aux::FromNestAttr;
+use proc_macro2::Span;
+use proc_macro2::TokenStream;
+use proc_macro2::TokenTree;
+use quote::quote;
+use quote::ToTokens;
+use std::marker::PhantomData;
+use std::ops::Deref;
+use syn::parse::Parse;
+use syn::spanned::Spanned;
+use syn::Meta;
+use syn::Token;
 
 #[derive(Debug, Clone, Default)]
 pub(crate) struct SlurpyArgs {
@@ -31,7 +48,7 @@ impl ToTokens for SlurpyArgs {
 }
 
 #[derive(Clone, Debug)]
-#[fxstruct(default(off), get(clone))]
+#[fxstruct(new(off), default(off), get(clone))]
 pub(crate) struct ErrorArg {
     error_type: syn::Path,
     expr:       Meta,
@@ -75,9 +92,9 @@ impl FromNestAttr for ErrorArg {
     }
 }
 
-impl FXTriggerHelper for ErrorArg {
-    fn is_true(&self) -> bool {
-        true
+impl FXSetState for ErrorArg {
+    fn is_set(&self) -> FXProp<bool> {
+        FXProp::new(true, None)
     }
 }
 
@@ -116,9 +133,14 @@ impl FromNestAttr for UnwrapArg {
     }
 }
 
-impl FXTriggerHelper for UnwrapArg {
-    fn is_true(&self) -> bool {
-        !self.off().is_present()
+impl FXSetState for UnwrapArg {
+    fn is_set(&self) -> FXProp<bool> {
+        if self.off.is_present() {
+            FXProp::new(false, Some(self.off.span()))
+        }
+        else {
+            FXProp::new(true, None)
+        }
     }
 }
 
@@ -144,7 +166,7 @@ impl<D> ChildArgsInner<D> {
     }
 
     pub fn is_rc_strong(&self) -> bool {
-        self.rc_strong().map_or(false, |b| b.is_true())
+        self.rc_strong().map_or_else(|| false, |rc_strong| *rc_strong.is_set())
     }
 }
 

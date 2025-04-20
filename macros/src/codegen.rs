@@ -1,14 +1,25 @@
-use crate::{
-    traits::ProducerDescriptor,
-    types::{ChildArgs, SlurpyArgs},
-};
-use darling::{ast, FromDeriveInput, FromMeta};
+use crate::traits::ProducerDescriptor;
+use crate::types::ChildArgs;
+use crate::types::SlurpyArgs;
+use darling::ast;
+use darling::FromDeriveInput;
+use darling::FromMeta;
 use fieldx::fxstruct;
-use fieldx_aux::{FXBool, FXHelper, FXHelperTrait, FXSynValue, FXTriggerHelper};
-use proc_macro2::{Span, TokenStream};
-use quote::{format_ident, quote, quote_spanned, ToTokens};
+use fieldx_aux::FXBool;
+use fieldx_aux::FXHelper;
+use fieldx_aux::FXHelperTrait;
+use fieldx_aux::FXOrig;
+use fieldx_aux::FXSetState;
+use fieldx_aux::FXSynValue;
+use proc_macro2::Span;
+use proc_macro2::TokenStream;
+use quote::format_ident;
+use quote::quote;
+use quote::quote_spanned;
+use quote::ToTokens;
 use std::collections::HashMap;
-use syn::{spanned::Spanned, Meta};
+use syn::spanned::Spanned;
+use syn::Meta;
 
 #[derive(Debug, Clone)]
 pub(crate) struct AppDescriptor {}
@@ -151,7 +162,7 @@ impl FXPlusProducer {
 
     fn rc_type(&self) -> (TokenStream, TokenStream) {
         let span = self.args.sync.as_ref().map_or(Span::call_site(), |s| s.span());
-        if self.args.sync.as_ref().map_or(false, |b| b.is_true()) {
+        if self.args.sync.as_ref().map_or(false, |b| *b.is_set()) {
             (
                 quote_spanned![span=> ::std::sync::Arc],
                 quote_spanned![span=> ::std::sync::Weak],
@@ -216,7 +227,7 @@ impl FXPlusProducer {
             else if let Some(error) = unwrap_arg.error_arg() {
                 let error_type = error.error_type().to_token_stream();
                 let expr = error.expr();
-                return_type = quote_spanned![error.span()=> Result<#rc_type<#parent_type>, #error_type>];
+                return_type = quote_spanned![error.final_span()=> Result<#rc_type<#parent_type>, #error_type>];
 
                 self.add_to_trait(
                     &trait_name,
@@ -225,11 +236,11 @@ impl FXPlusProducer {
                     },
                 )?;
 
-                quote_spanned![error.span()=> .ok_or(#expr)]
+                quote_spanned![error.final_span()=> .ok_or(#expr)]
             }
             else if let Some(map) = unwrap_arg.map_arg() {
                 let error_type = map.error_type().to_token_stream();
-                let span = map.span();
+                let span = map.final_span();
                 let expr = match map.expr() {
                     Meta::List(ref call) => quote![.#call],
                     Meta::Path(ref method) => quote![.#method ()],
@@ -254,7 +265,7 @@ impl FXPlusProducer {
                     },
                 )?;
 
-                quote_spanned![unwrap_arg.span()=> .unwrap()]
+                quote_spanned![unwrap_arg.final_span()=> .unwrap()]
             };
             (unwrap_or_error, return_type)
         }
@@ -375,8 +386,8 @@ impl FXPlusProducer {
 
         let args = &self.args;
 
-        let is_app = args.app.as_ref().map_or(false, |b| b.is_true());
-        let is_parent = args.parent.as_ref().map_or(false, |b| b.is_true());
+        let is_app = args.app.as_ref().map_or(false, |b| *b.is_set());
+        let is_parent = args.parent.as_ref().map_or(false, |b| *b.is_set());
         let is_agent = args.agent.is_some();
         let is_child = args.child.is_some();
 
@@ -413,7 +424,7 @@ impl FXPlusProducer {
                 .or_else(|| args.agent().map(|a| a.span()))
                 .unwrap_or_else(Span::call_site);
             fxs_args.push(quote_spanned! {span=> builder #builder_args});
-            fxs_args.push(quote_spanned! {span=> no_new});
+            fxs_args.push(quote_spanned! {span=> new(off)});
         }
         else if args.has_builder() {
             let builder_span = args.builder().unwrap().span();

@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/")]
+#![doc(html_root_url = "https://docs.rs/fieldx_plus")]
 //! This crate is intended for implementing some design patterns, based on [`fieldx`](https://crates.io/crates/fieldx)
 //! crate. At the moment it is only Application/Agent and Parent/Child patterns. Both are basically the same thing
 //! essentially where Application/Parent is a reference counted object and agents/children hold references to it. The
@@ -104,10 +104,19 @@
 
 pub mod traits;
 
-pub use crate::traits::{Agent, Application, Child, Parent};
+#[doc(inline)]
+pub use crate::traits::Agent;
+#[doc(inline)]
+pub use crate::traits::Application;
+#[doc(inline)]
+pub use crate::traits::Child;
+#[doc(inline)]
+pub use crate::traits::Parent;
+#[doc(inline)]
 pub use fieldx_plus_macros::fx_plus;
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! __fxplus_builder {
     ($method:ident, $conv_method:ident: $self:expr, $ty:ty $( { $( $field:ident : $initializer:expr ),* $(,)* } )? ) => {
         <$ty>::builder()
