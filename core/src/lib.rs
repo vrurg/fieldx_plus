@@ -116,7 +116,7 @@ macro_rules! __fxplus_builder {
     };
     ($method:ident, $conv_method:ident: $self:expr, $ty:ty $( => $( $field:ident : $initializer:expr ; )* )? ) => {
         <$ty>::builder()
-            .$method( $ty::$conv_method( $self ) )
+            .$method( <$ty>::$conv_method( $self.__fxplus_myself_downgrade() ) )
             $( $( .$field($initializer) )* )?
     }
 }
