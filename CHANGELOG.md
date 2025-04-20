@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.1.5] - 2025-02-22
+## [v0.1.6] - 2025-04-20
 
 ### Features
 
@@ -16,10 +16,12 @@
 - Try improving error messaging
 - Incorrect code generation for unwrap error mapping
 - `_build` and `_builder` macros to support parameterized types
+- Make the macro use rc-wrapped self
 
 ### Refactor
 
 - Rename AppObj to Agent
+- Update code to conform to the latest changes in the `fieldx` crate
 
 ### Documentation
 
