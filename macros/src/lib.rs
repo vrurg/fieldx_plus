@@ -4,9 +4,12 @@ mod codegen;
 mod traits;
 pub(crate) mod types;
 
-use codegen::{FXPlusArgs, FXPlusProducer, FXPlusStruct};
-use darling::{ast, FromDeriveInput, FromMeta};
-use proc_macro;
+use codegen::FXPlusArgs;
+use codegen::FXPlusProducer;
+use codegen::FXPlusStruct;
+use darling::ast;
+use darling::FromDeriveInput;
+use darling::FromMeta;
 use proc_macro2::TokenStream;
 use syn::DeriveInput;
 
@@ -31,11 +34,11 @@ where
 pub fn fx_plus(args: proc_macro::TokenStream, input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let macro_args: FXPlusArgs = match into_attr_args(args) {
         Ok(a) => a,
-        Err(e) => return darling::Error::from(e).write_errors().into(),
+        Err(e) => return e.write_errors().into(),
     };
     let struct_recv: FXPlusStruct = match into_struct_receiver(&input) {
         Ok(sr) => sr,
-        Err(e) => return darling::Error::from(e).write_errors().into(),
+        Err(e) => return e.write_errors().into(),
     };
     let tt = FXPlusProducer::new(macro_args, struct_recv)
         .produce()

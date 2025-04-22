@@ -162,7 +162,7 @@ impl FXPlusProducer {
 
     fn rc_type(&self) -> (TokenStream, TokenStream) {
         let span = self.args.sync.as_ref().map_or(Span::call_site(), |s| s.span());
-        if self.args.sync.as_ref().map_or(false, |b| *b.is_set()) {
+        if self.args.sync.as_ref().is_some_and(|b| *b.is_set()) {
             (
                 quote_spanned![span=> ::std::sync::Arc],
                 quote_spanned![span=> ::std::sync::Weak],
@@ -386,8 +386,8 @@ impl FXPlusProducer {
 
         let args = &self.args;
 
-        let is_app = args.app.as_ref().map_or(false, |b| *b.is_set());
-        let is_parent = args.parent.as_ref().map_or(false, |b| *b.is_set());
+        let is_app = args.app.as_ref().is_some_and(|b| *b.is_set());
+        let is_parent = args.parent.as_ref().is_some_and(|b| *b.is_set());
         let is_agent = args.agent.is_some();
         let is_child = args.child.is_some();
 
@@ -473,7 +473,7 @@ impl FXPlusProducer {
         let mut trait_impls = vec![];
 
         for (trait_name, trait_body) in self.traits().iter() {
-            let trait_span = self.trait_spans().get(trait_name).unwrap().clone();
+            let trait_span = *self.trait_spans().get(trait_name).unwrap();
             trait_impls.push(quote_spanned! {trait_span=>
                 impl #impl_generics ::fieldx_plus::#trait_name for #ident #ty_generics #where_clause {
                     #(#trait_body)*

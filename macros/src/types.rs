@@ -31,9 +31,7 @@ pub(crate) struct SlurpyArgs {
 
 impl FromMeta for SlurpyArgs {
     fn from_list(item: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
-        Ok(Self {
-            args: item.iter().map(|nm| nm.clone()).collect(),
-        })
+        Ok(Self { args: item.to_vec() })
     }
 }
 
@@ -201,7 +199,7 @@ pub struct ChildArgs<D: ProducerDescriptor> {
 
 impl<D: ProducerDescriptor> ChildArgs<D> {
     pub fn span(&self) -> Span {
-        self.span.clone()
+        self.span
     }
 }
 

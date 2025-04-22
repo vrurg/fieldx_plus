@@ -91,11 +91,11 @@
 //! - `unwrap(expect("Error message")` commands to use `.expect("Error message")`; with this and the above variant we
 //!   always get just the app/parent object
 //! - `unwrap(error(ErrorType, <expression>))` would produce `app`/`parent` methods that return `ErrorType`; the
-//! particular value returned depends on the `<expression>`. Say, `ErrorType::ParentIsGone` can be used to return a
-//! specific error code
+//!   particular value returned depends on the `<expression>`. Say, `ErrorType::ParentIsGone` can be used to return a
+//!   specific error code
 //! - `unwrap(map(ErrorType, <expr>))` can be used to invoke a method on `self`. `<expr>` can either be just method name
-//! or something like `map_to_err("argument", 42)` in which case the `map_to_err` method will get the arguments
-//! specified.
+//!   or something like `map_to_err("argument", 42)` in which case the `map_to_err` method will get the arguments
+//!   specified.
 //!
 //! Helper macros `agent_build`, `agent_builder`, `child_build`, and `child_builder` are wrappers around builder
 //! pattern. I.e.  `agent_build!(self.app(), Agent { foo: 42, bar: "baz" })` is actually a shortcut for
