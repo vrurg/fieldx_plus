@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.1.6] - 2025-04-20
+## [v0.1.7] - 2025-04-23
 
 ### Features
 
@@ -17,6 +17,7 @@
 - Incorrect code generation for unwrap error mapping
 - `_build` and `_builder` macros to support parameterized types
 - Make the macro use rc-wrapped self
+- Ensure compatibility with the latest fieldx version
 
 ### Refactor
 
@@ -30,6 +31,10 @@
 ### Styling
 
 - Make *_build and *_builder macro syntax be closer to Rust standard
+
+### Maintenance
+
+- Make clippy (with default features) happy
 
 ### ️ Miscellaneous Tasks
 
