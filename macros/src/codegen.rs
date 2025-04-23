@@ -105,7 +105,7 @@ pub(crate) struct FXPlusArgs {
     extra_args: SlurpyArgs,
 }
 
-#[fxstruct(no_new)]
+#[fxstruct(new(off))]
 pub(crate) struct FXPlusProducer {
     args:        FXPlusArgs,
     plus_struct: FXPlusStruct,

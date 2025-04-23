@@ -80,7 +80,7 @@ impl FromMeta for ErrorArg {
 }
 
 impl FromNestAttr for ErrorArg {
-    fn set_literals(self, literals: &Vec<syn::Lit>) -> darling::Result<Self> {
+    fn set_literals(self, literals: &[syn::Lit]) -> darling::Result<Self> {
         self.no_literals(literals)?;
         Ok(self)
     }
@@ -121,7 +121,7 @@ impl UnwrapArg {
 }
 
 impl FromNestAttr for UnwrapArg {
-    fn set_literals(self, literals: &Vec<syn::Lit>) -> darling::Result<Self> {
+    fn set_literals(self, literals: &[syn::Lit]) -> darling::Result<Self> {
         self.no_literals(literals)?;
         Ok(self)
     }
