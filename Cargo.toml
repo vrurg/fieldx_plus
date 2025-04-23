@@ -16,8 +16,8 @@
     darling            = ">=0.20.7"
     fieldx             = { version = ">=0.1.15" }
     fieldx_aux         = { version = ">=0.1.15" }
-    fieldx_plus        = { version = "0.1.7", path = "core" }
-    fieldx_plus_macros = { version = "0.1.7", path = "macros" }
+    fieldx_plus        = { version = "0.1.8-beta.1", path = "core" }
+    fieldx_plus_macros = { version = "0.1.8-beta.1", path = "macros" }
     once_cell          = "1.21"
     proc-macro2        = "1.0"
     quote              = "1.0"
