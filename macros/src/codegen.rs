@@ -118,6 +118,9 @@ pub(crate) struct FXPlusProducer {
 
     #[fieldx(inner_mut, get_mut)]
     trait_spans: HashMap<syn::Type, Span>,
+
+    #[fieldx(inner_mut, get_mut, get)]
+    deprecations: Vec<TokenStream>,
 }
 
 impl FXPlusProducer {
@@ -128,6 +131,7 @@ impl FXPlusProducer {
             struct_fields: Default::default(),
             traits: Default::default(),
             trait_spans: Default::default(),
+            deprecations: Vec::new().into(),
         }
     }
 
@@ -224,6 +228,36 @@ impl FXPlusProducer {
 
                 quote_spanned![expect.span()=> .expect(#expect_message)]
             }
+            else if let Some(or_arg) = unwrap_arg.or_arg() {
+                let or_value = or_arg.value();
+                let error_type = or_value.0.to_token_stream();
+                let expr = &or_value.1;
+                return_type = quote_spanned![or_arg.final_span()=> Result<#rc_type<#parent_type>, #error_type>];
+
+                self.add_to_trait(
+                    &trait_name,
+                    quote_spanned! {parent_type.span()=>
+                        type #rc_assoc = #return_type;
+                    },
+                )?;
+
+                quote_spanned![or_arg.final_span()=> .ok_or(#expr)]
+            }
+            else if let Some(or_else) = unwrap_arg.or_else_arg() {
+                let or_value = or_else.value();
+                let error_type = or_value.0.to_token_stream();
+                let expr = &or_value.1;
+                return_type = quote_spanned![or_else.final_span()=> Result<#rc_type<#parent_type>, #error_type>];
+
+                self.add_to_trait(
+                    &trait_name,
+                    quote_spanned! {parent_type.span()=>
+                        type #rc_assoc = #return_type;
+                    },
+                )?;
+
+                quote_spanned![or_else.final_span()=> .ok_or_else(|| #expr)]
+            }
             else if let Some(error) = unwrap_arg.error_arg() {
                 let error_type = error.error_type().to_token_stream();
                 let expr = error.expr();
@@ -236,7 +270,17 @@ impl FXPlusProducer {
                     },
                 )?;
 
-                quote_spanned![error.final_span()=> .ok_or(#expr)]
+                quote_spanned![error.final_span()=> .ok_or({
+                    const _: () = {
+                        #[deprecated(
+                            since = "0.1.8",
+                            note = "Use `or(...)` argument instead of `error(...)`"
+                        )]
+                        const fn error() {}
+                        error();
+                    };
+                    #expr
+                })]
             }
             else if let Some(map) = unwrap_arg.map_arg() {
                 let error_type = map.error_type().to_token_stream();
@@ -246,6 +290,7 @@ impl FXPlusProducer {
                     Meta::Path(ref method) => quote![.#method ()],
                     _ => panic!("It's an internal problem: name-value must not appear here!"),
                 };
+
                 return_type = quote_spanned![span=> Result<#rc_type<#parent_type>, #error_type>];
 
                 self.add_to_trait(
@@ -255,7 +300,17 @@ impl FXPlusProducer {
                     },
                 )?;
 
-                quote_spanned![span=> .ok_or_else(|| self #expr)]
+                quote_spanned![span=> .ok_or_else(|| {
+                    const _: () = {
+                        #[deprecated(
+                            since = "0.1.8",
+                            note = "Use `or_else(...)` argument instead of `map(...)`"
+                        )]
+                        const fn map() {}
+                        map();
+                    };
+                    self #expr
+                })]
             }
             else {
                 self.add_to_trait(
@@ -481,8 +536,12 @@ impl FXPlusProducer {
             });
         }
 
+        let d = self.deprecations();
+        let deprecations = &*d;
+
         Ok(quote! {
             use ::fieldx_plus::traits::*;
+            #(#deprecations)*
             #[::fieldx::fxstruct( #( #fxs_args ),* )]
             #(#attrs)*
             #vis struct #ident #generics #where_clause {

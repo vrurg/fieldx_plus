@@ -1,4 +1,6 @@
-use fieldx_plus::{agent_build, child_build, fx_plus};
+use fieldx_plus::agent_build;
+use fieldx_plus::child_build;
+use fieldx_plus::fx_plus;
 use std::rc::Rc;
 use thiserror::Error;
 
@@ -26,7 +28,7 @@ impl MyApp {
     }
 }
 
-#[fx_plus(agent(MyApp, unwrap(error(MyError, MyError::adhoc("something")))), parent, sync(off))]
+#[fx_plus(agent(MyApp, unwrap(or(MyError, MyError::adhoc("something")))), parent, sync(off))]
 struct AnAgent {
     #[fieldx(get(clone), builder(into))]
     a_foo: String,

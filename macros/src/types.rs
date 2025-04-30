@@ -11,6 +11,7 @@ use fieldx_aux::FXOrig;
 use fieldx_aux::FXProp;
 use fieldx_aux::FXSetState;
 use fieldx_aux::FXString;
+use fieldx_aux::FXSynTuple;
 use fieldx_aux::FromNestAttr;
 use proc_macro2::Span;
 use proc_macro2::TokenStream;
@@ -100,18 +101,24 @@ impl FXSetState for ErrorArg {
 #[fxstruct(default(off), get)]
 #[darling(and_then = Self::validate)]
 pub(crate) struct UnwrapArg {
-    off:        Flag,
+    off:         Flag,
     #[darling(rename = "expect")]
-    expect_arg: Option<FXString>,
+    expect_arg:  Option<FXString>,
     #[darling(rename = "error")]
-    error_arg:  Option<FXNestingAttr<ErrorArg>>,
+    error_arg:   Option<FXNestingAttr<ErrorArg>>,
     #[darling(rename = "map")]
-    map_arg:    Option<FXNestingAttr<ErrorArg>>,
+    map_arg:     Option<FXNestingAttr<ErrorArg>>,
+    #[darling(rename = "or")]
+    or_arg:      Option<FXSynTuple<(syn::Path, syn::Expr)>>,
+    #[darling(rename = "or_else")]
+    or_else_arg: Option<FXSynTuple<(syn::Path, syn::Expr)>>,
 }
 
 impl UnwrapArg {
     validate_exclusives! {
-        "drop handling": expect_arg as "expect"; error_arg as "error"; map_arg as "map";
+        "drop handling":
+            expect_arg as "expect"; or_arg as "or"; or_else_arg as "or_else";
+            error_arg as "error"; map_arg as "map";
     }
 
     fn validate(self) -> Result<Self, darling::Error> {
