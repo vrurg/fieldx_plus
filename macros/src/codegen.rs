@@ -180,6 +180,21 @@ impl FXPlusProducer {
         }
     }
 
+    fn translate_or_expr(&self, expr: &syn::Expr) -> darling::Result<TokenStream> {
+        let expr = match expr {
+            syn::Expr::Path(ref path) => {
+                if let Some(ident) = path.path.get_ident() {
+                    quote_spanned! {path.span()=> self.#ident()}
+                }
+                else {
+                    return Err(darling::Error::custom("Expected a method name").with_span(&path));
+                }
+            }
+            _ => expr.to_token_stream(),
+        };
+        Ok(expr)
+    }
+
     fn child_params<D: ProducerDescriptor>(
         &self,
         child_args: &ChildArgs<D>,
@@ -211,7 +226,7 @@ impl FXPlusProducer {
             },
         )?;
 
-        Ok(if let Some(ref unwrap_arg) = child_args.unwrap_parent() {
+        Ok(if let Some(unwrap_arg) = child_args.unwrap_parent() {
             let mut return_type = quote![#rc_type<#parent_type>];
             let unwrap_or_error = if let Some(expect) = unwrap_arg.expect_arg() {
                 let Some(expect_message) = expect.value()
@@ -228,11 +243,17 @@ impl FXPlusProducer {
 
                 quote_spanned![expect.span()=> .expect(#expect_message)]
             }
-            else if let Some(or_arg) = unwrap_arg.or_arg() {
-                let or_value = or_arg.value();
-                let error_type = or_value.0.to_token_stream();
-                let expr = &or_value.1;
-                return_type = quote_spanned![or_arg.final_span()=> Result<#rc_type<#parent_type>, #error_type>];
+            else if unwrap_arg.or_arg().is_set_bool() || unwrap_arg.or_else_arg().is_set_bool() {
+                let Some(or_arg) = unwrap_arg
+                    .or_arg()
+                    .as_ref()
+                    .or_else(|| unwrap_arg.or_else_arg().as_ref())
+                else {
+                    return Err(darling::Error::custom("Internal error: either `or()` or `or_else()` subargs are reported as set but neither has a value").with_span(&unwrap_arg.final_span()));
+                };
+                let error_type = or_arg.0.to_token_stream();
+                let expr = self.translate_or_expr(&or_arg.1)?;
+                return_type = quote_spanned![or_arg.0.span()=> Result<#rc_type<#parent_type>, #error_type>];
 
                 self.add_to_trait(
                     &trait_name,
@@ -241,22 +262,12 @@ impl FXPlusProducer {
                     },
                 )?;
 
-                quote_spanned![or_arg.final_span()=> .ok_or(#expr)]
-            }
-            else if let Some(or_else) = unwrap_arg.or_else_arg() {
-                let or_value = or_else.value();
-                let error_type = or_value.0.to_token_stream();
-                let expr = &or_value.1;
-                return_type = quote_spanned![or_else.final_span()=> Result<#rc_type<#parent_type>, #error_type>];
-
-                self.add_to_trait(
-                    &trait_name,
-                    quote_spanned! {parent_type.span()=>
-                        type #rc_assoc = #return_type;
-                    },
-                )?;
-
-                quote_spanned![or_else.final_span()=> .ok_or_else(|| #expr)]
+                if unwrap_arg.or_arg().is_set_bool() {
+                    quote_spanned![or_arg.final_span()=> .ok_or(#expr)]
+                }
+                else {
+                    quote_spanned![or_arg.final_span()=> .ok_or_else(|| #expr)]
+                }
             }
             else if let Some(error) = unwrap_arg.error_arg() {
                 let error_type = error.error_type().to_token_stream();

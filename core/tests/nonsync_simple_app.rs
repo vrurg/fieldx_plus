@@ -10,12 +10,6 @@ enum MyError {
     AppGone,
 }
 
-impl MyError {
-    fn adhoc(_msg: &str) -> Self {
-        Self::AppGone
-    }
-}
-
 #[fx_plus(app, sync(off))]
 struct MyApp {
     #[fieldx(lazy, get(clone))]
@@ -28,7 +22,7 @@ impl MyApp {
     }
 }
 
-#[fx_plus(agent(MyApp, unwrap(or(MyError, MyError::adhoc("something")))), parent, sync(off))]
+#[fx_plus(agent(MyApp, unwrap(or(MyError, no_app))), parent, sync(off))]
 struct AnAgent {
     #[fieldx(get(clone), builder(into))]
     a_foo: String,
@@ -44,6 +38,10 @@ impl AnAgent {
 
     fn build_child(&self) -> AChild {
         child_build!(self, AChild).expect("Can't create a child object")
+    }
+
+    fn no_app(&self) -> MyError {
+        MyError::AppGone
     }
 }
 
