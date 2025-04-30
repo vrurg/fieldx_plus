@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.1.7] - 2025-04-23
+## [v0.1.8] - 2025-04-30
 
 ### Features
 
@@ -23,6 +23,7 @@
 
 - Rename AppObj to Agent
 - Update code to conform to the latest changes in the `fieldx` crate
+- Introduce `or` and `or_else` sub-arguments of `unwrap`
 
 ### Documentation
 
