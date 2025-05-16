@@ -1,4 +1,5 @@
-use fieldx_plus::{agent_build, fx_plus};
+use fieldx_plus::agent_build;
+use fieldx_plus::fx_plus;
 
 trait AppCfg {
     fn cfg(&self) -> String;

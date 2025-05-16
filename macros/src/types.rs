@@ -16,13 +16,14 @@ use fieldx_aux::FromNestAttr;
 use proc_macro2::Span;
 use proc_macro2::TokenStream;
 use proc_macro2::TokenTree;
+use quote::format_ident;
 use quote::quote;
 use quote::ToTokens;
 use std::marker::PhantomData;
 use std::ops::Deref;
+use syn::ext::IdentExt;
 use syn::parse::Parse;
 use syn::spanned::Spanned;
-use syn::Meta;
 use syn::Token;
 
 #[derive(Debug, Clone, Default)]
@@ -46,57 +47,6 @@ impl ToTokens for SlurpyArgs {
     }
 }
 
-#[derive(Clone, Debug)]
-#[fxstruct(new(off), default(off), get(clone))]
-pub(crate) struct ErrorArg {
-    error_type: syn::Path,
-    expr:       Meta,
-}
-
-impl FromMeta for ErrorArg {
-    fn from_list(items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
-        if items.len() < 2 {
-            return Err(darling::Error::custom("Two arguments are expected"));
-        }
-        if items.len() > 2 {
-            return Err(darling::Error::custom("Too many arguments, only two are expected"));
-        }
-        let NestedMeta::Meta(Meta::Path(error_type)) = items[0].clone()
-        else {
-            return Err(darling::Error::custom("Expected a error type here").with_span(&items[0]));
-        };
-        let expr = match items[1] {
-            NestedMeta::Meta(ref meta) => {
-                if let Meta::NameValue(_) = meta {
-                    return Err(darling::Error::custom("Name-value pairs are not supported here").with_span(&items[1]));
-                }
-                meta.clone()
-            }
-            _ => {
-                return Err(darling::Error::custom("Unsupported expression kind").with_span(&items[1]));
-            }
-        };
-        Ok(Self { error_type, expr })
-    }
-}
-
-impl FromNestAttr for ErrorArg {
-    fn set_literals(self, literals: &[syn::Lit]) -> darling::Result<Self> {
-        self.no_literals(literals)?;
-        Ok(self)
-    }
-
-    fn for_keyword(path: &syn::Path) -> darling::Result<Self> {
-        Err(darling::Error::custom("Expected error class as the argument").with_span(&path))
-    }
-}
-
-impl FXSetState for ErrorArg {
-    fn is_set(&self) -> FXProp<bool> {
-        FXProp::new(true, None)
-    }
-}
-
 #[derive(FromMeta, Clone, Debug, Default)]
 #[fxstruct(default(off), get)]
 #[darling(and_then = Self::validate)]
@@ -104,10 +54,6 @@ pub(crate) struct UnwrapArg {
     off:         Flag,
     #[darling(rename = "expect")]
     expect_arg:  Option<FXString>,
-    #[darling(rename = "error")]
-    error_arg:   Option<FXNestingAttr<ErrorArg>>,
-    #[darling(rename = "map")]
-    map_arg:     Option<FXNestingAttr<ErrorArg>>,
     #[darling(rename = "or")]
     or_arg:      Option<FXSynTuple<(syn::Path, syn::Expr)>>,
     #[darling(rename = "or_else")]
@@ -116,9 +62,8 @@ pub(crate) struct UnwrapArg {
 
 impl UnwrapArg {
     validate_exclusives! {
-        "drop handling":
+        "parent/app drop handling":
             expect_arg as "expect"; or_arg as "or"; or_else_arg as "or_else";
-            error_arg as "error"; map_arg as "map";
     }
 
     fn validate(self) -> Result<Self, darling::Error> {
@@ -149,30 +94,18 @@ impl FXSetState for UnwrapArg {
     }
 }
 
-#[fxstruct(get, no_new, default(off))]
+#[fxstruct(get, no_new, default(off), builder)]
 #[derive(Debug, Clone)]
 pub struct ChildArgsInner<D> {
-    parent_type:   syn::Type,
+    parent_type:       syn::Type,
     #[fieldx(optional, get(as_ref))]
-    rc_strong:     FXBool,
+    parent_base_ident: syn::Ident,
     #[fieldx(optional, get(as_ref))]
-    unwrap_parent: FXNestingAttr<UnwrapArg>,
-    _d:            PhantomData<D>,
-}
-
-impl<D> ChildArgsInner<D> {
-    fn new(parent_type: syn::Type, from_args: _ChldArgs) -> Self {
-        Self {
-            parent_type,
-            rc_strong: from_args.rc_strong,
-            unwrap_parent: from_args.unwrap_parent,
-            _d: PhantomData::<D>,
-        }
-    }
-
-    pub fn is_rc_strong(&self) -> bool {
-        self.rc_strong().map_or_else(|| false, |rc_strong| *rc_strong.is_set())
-    }
+    rc_strong:         FXBool,
+    #[fieldx(optional, get(as_ref))]
+    unwrap_parent:     FXNestingAttr<UnwrapArg>,
+    #[fieldx(builder(off))]
+    _d:                PhantomData<D>,
 }
 
 #[derive(FromMeta, Debug)]
@@ -181,12 +114,6 @@ struct _ChldArgs {
     rc_strong:     Option<FXBool>,
     #[darling(rename = "unwrap")]
     unwrap_parent: Option<FXNestingAttr<UnwrapArg>>,
-}
-
-impl<D: ProducerDescriptor> ChildArgsInner<D> {
-    pub(crate) fn base_name(&self) -> &'static str {
-        D::base_name()
-    }
 }
 
 impl _ChldArgs {
@@ -208,6 +135,13 @@ impl<D: ProducerDescriptor> ChildArgs<D> {
     pub fn span(&self) -> Span {
         self.span
     }
+
+    pub fn parent_base_ident(&self) -> syn::Ident {
+        self.inner
+            .parent_base_ident()
+            .cloned()
+            .unwrap_or_else(|| format_ident!("{}", D::base_name(), span = self.span))
+    }
 }
 
 impl<D: ProducerDescriptor + std::fmt::Debug> Parse for ChildArgs<D> {
@@ -219,7 +153,21 @@ impl<D: ProducerDescriptor + std::fmt::Debug> Parse for ChildArgs<D> {
                 .into());
         };
 
-        let all = input.fork().cursor().token_stream().span();
+        let mut parent_base_ident = None;
+
+        if input.peek(syn::Token![as]) {
+            let _ = input.parse::<Token![as]>()?;
+            let lookahead = input.lookahead1();
+            if lookahead.peek(syn::Ident::peek_any) {
+                let ident = syn::Ident::parse_any(input)?;
+                parent_base_ident = Some(ident);
+            }
+            else {
+                return Err(lookahead.error());
+            }
+        }
+
+        let all_span = input.fork().cursor().token_stream().span();
 
         input.step(|cursor| {
             let rest = *cursor;
@@ -242,10 +190,23 @@ impl<D: ProducerDescriptor + std::fmt::Debug> Parse for ChildArgs<D> {
 
         let ca = _ChldArgs::from_list(&ml)?;
 
-        Ok(Self {
-            inner: ChildArgsInner::new(parent_type, ca),
-            span:  all.span(),
-        })
+        let mut inner_builder = ChildArgsInner::builder().parent_type(parent_type.clone());
+
+        if let Some(base_ident) = parent_base_ident {
+            inner_builder = inner_builder.parent_base_ident(base_ident);
+        }
+        if let Some(rc_strong) = ca.rc_strong {
+            inner_builder = inner_builder.rc_strong(rc_strong);
+        }
+        if let Some(unwrap_parent) = ca.unwrap_parent {
+            inner_builder = inner_builder.unwrap_parent(unwrap_parent);
+        }
+
+        let inner = inner_builder
+            .build()
+            .map_err(|err| syn::Error::new(all_span, format!("Error while building arguments struct: {err}")))?;
+
+        Ok(Self { inner, span: all_span })
     }
 }
 
@@ -254,5 +215,27 @@ impl<D: ProducerDescriptor> Deref for ChildArgs<D> {
 
     fn deref(&self) -> &Self::Target {
         &self.inner
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use fieldx_aux::FXSetState;
+    use quote::quote;
+    use quote::ToTokens;
+
+    use crate::codegen::AppDescriptor;
+
+    use super::ChildArgs;
+
+    #[test]
+    fn test_child_args() {
+        let input = quote! {Node as up_node, unwrap};
+
+        let cargs: ChildArgs<AppDescriptor> = syn::parse2(input).unwrap();
+
+        assert_eq!(cargs.parent_type().to_token_stream().to_string(), "Node");
+        assert_eq!(cargs.parent_base_ident().to_string(), "up_node");
+        assert!(*cargs.unwrap_parent().is_set());
     }
 }

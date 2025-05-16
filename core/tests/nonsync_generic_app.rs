@@ -11,7 +11,7 @@ enum MyError {
 }
 
 impl MyError {
-    fn adhoc(_msg: &str) -> Self {
+    fn appgone(_msg: &str) -> Self {
         Self::AppGone
     }
 }
@@ -35,7 +35,7 @@ where
     }
 }
 
-#[fx_plus(agent(MyApp<String>, unwrap(or(MyError, MyError::adhoc("something")))), parent, sync(off))]
+#[fx_plus(agent(MyApp<String>, unwrap(or(MyError, MyError::appgone("something")))), parent, sync(off))]
 struct AnAgent {
     #[fieldx(get(clone), builder(into))]
     a_foo: String,

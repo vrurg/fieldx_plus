@@ -45,15 +45,15 @@ impl AnAgent {
     }
 }
 
-#[fx_plus(child(AnAgent, unwrap(expect("Parent is unexpectedly gone"))), sync(off))]
+#[fx_plus(child(AnAgent, unwrap(or(MyError, MyError::AppGone))), sync(off))]
 struct AChild {
-    #[fieldx(get(clone), lazy)]
+    #[fieldx(get(clone), fallible(error(MyError)), lazy)]
     b_foo: String,
 }
 
 impl AChild {
-    fn build_b_foo(&self) -> String {
-        format!("b:{}", self.parent().a_foo())
+    fn build_b_foo(&self) -> Result<String, MyError> {
+        Ok(format!("b:{}", self.parent()?.a_foo()))
     }
 }
 
@@ -64,7 +64,7 @@ fn new_app() {
 
     let ac = agent_build!(app, AnAgent { a_foo: "oki!" }).expect("Can't create a child object");
 
-    assert_eq!(ac.child().b_foo(), "b:oki!".to_string());
+    assert_eq!(ac.child().b_foo().expect("Can't get b_foo"), "b:oki!".to_string());
 
     assert_eq!(ac.foo().unwrap(), "some str".to_string());
     assert_eq!(ac.a_foo(), "oki!".to_string());

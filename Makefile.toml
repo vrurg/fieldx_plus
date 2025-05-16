@@ -3,41 +3,9 @@ extend = "build-tools/std-makefile.toml"
 [env]
     CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
     __MAKE_README_CRATE_ROOT__           = "core"
+    __MAKE_TEST_FEATURES__               = "sync async serde send_guard"
     __MAKE_TEST_TASKS__                  = "test-default test-combinations"
     __MAKE_TOOLCHAINS__                  = "1.77 stable beta nightly"
 
 [config]
     default_to_workspace = false
-
-[tasks.test-default]
-    args        = ["test", "--workspace"]
-    category    = "Test"
-    command     = "cargo"
-    description = "Test with only the default features"
-    toolchain   = "${__MAKE_DEFAULT_TOOLCHAIN__}"
-
-[tasks.test-combinations]
-    category = "Test"
-    description = "Test with only the default features"
-    script = '''
-!include_files build-tools/makefile.ds
-
-features = array sync async serde send_guard
-feature_sets = generate_power_set ${features}
-
-for fs in ${feature_sets}
-    fs = array_join ${fs} ","
-    echo "Testing feature set '${fs}'"
-    set_env __MAKE_FEATURE_SET__ ${fs}
-    cm_run_task test-features
-end
-'''
-    script_runner = "@duckscript"
-    toolchain = "${__MAKE_DEFAULT_TOOLCHAIN__}"
-
-[tasks.test-features]
-    args        = ["test", "--features", "${__MAKE_FEATURE_SET__}"]
-    category    = "Test"
-    command     = "cargo"
-    description = "Test with '${__MAKE_FEATURE_SET__}' features"
-    toolchain   = "${__MAKE_DEFAULT_TOOLCHAIN__}"

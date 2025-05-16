@@ -16,9 +16,10 @@
     fieldx_plus_macros = { workspace = true }
 
 [dev-dependencies]
-    fieldx      = { workspace = true, features = ["sync"] }
+    fieldx      = { workspace = true }
     parking_lot = { version = "0.12" }
     thiserror   = { workspace = true }
+    tokio       = { workspace = true, features = ["macros", "rt", "rt-multi-thread", "test-util"] }
 
 [features]
     async      = ["fieldx/async"]

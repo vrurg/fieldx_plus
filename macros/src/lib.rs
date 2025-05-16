@@ -1,15 +1,16 @@
 #![allow(non_camel_case_types)]
 
 mod codegen;
+mod ctx;
 mod traits;
 pub(crate) mod types;
 
 use codegen::FXPlusArgs;
 use codegen::FXPlusProducer;
-use codegen::FXPlusStruct;
 use darling::ast;
 use darling::FromDeriveInput;
 use darling::FromMeta;
+use fieldx_core::struct_receiver::FXStructReceiver;
 use proc_macro2::TokenStream;
 use syn::DeriveInput;
 
@@ -36,7 +37,7 @@ pub fn fx_plus(args: proc_macro::TokenStream, input: proc_macro::TokenStream) ->
         Ok(a) => a,
         Err(e) => return e.write_errors().into(),
     };
-    let struct_recv: FXPlusStruct = match into_struct_receiver(&input) {
+    let struct_recv: FXStructReceiver = match into_struct_receiver(&input) {
         Ok(sr) => sr,
         Err(e) => return e.write_errors().into(),
     };
