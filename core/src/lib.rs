@@ -123,7 +123,7 @@ macro_rules! __fxplus_builder {
             .$method( <$ty>::$conv_method( $self.__fxplus_myself_downgrade() ) )
             $( $( .$field($initializer) )* )?
     };
-    ($method:ident, $conv_method:ident: $self:expr, $ty:ty $( => $( $field:ident : $initializer:expr ; )* )? ) => {
+    ($method:ident, $conv_method:ident: $self:expr, $ty:ty $( => $( $field:ident : $initializer:expr );* )? ) => {
         <$ty>::builder()
             .$method( <$ty>::$conv_method( $self.__fxplus_myself_downgrade() ) )
             $( $( .$field($initializer) )* )?
@@ -133,7 +133,7 @@ macro_rules! __fxplus_builder {
 #[macro_export]
 macro_rules! agent_builder {
     ($self:expr, $ty:ty $( => $( $field:ident : $initializer:expr ; )* )? ) => {
-        ::fieldx_plus::__fxplus_builder!(app, __fxplus_app: $self, $ty $(  { $( $field : $initializer  ),* } )?)
+        ::fieldx_plus::__fxplus_builder!(app, __fxplus_app: $self, $ty $(  { $( $field : $initializer ),* } )?)
     };
     ( $( $args:tt )+ ) => {
         ::fieldx_plus::__fxplus_builder!(app, __fxplus_app: $( $args )+ )
@@ -143,7 +143,7 @@ macro_rules! agent_builder {
 #[macro_export]
 macro_rules! agent_build {
     ($self:expr, $ty:ty $( => $( $field:ident : $initializer:expr ; )* )? ) => {
-        ::fieldx_plus::__fxplus_builder!(app, __fxplus_app: $self, $ty $( { $( $field : $initializer ; )* } )?)
+        ::fieldx_plus::__fxplus_builder!(app, __fxplus_app: $self, $ty $( { $( $field : $initializer ),* } )?)
                 .build()
     };
     ( $( $args:tt )+ ) => {
@@ -154,7 +154,7 @@ macro_rules! agent_build {
 #[macro_export]
 macro_rules! child_builder {
     ($self:expr, $ty:ty $( => $( $field:ident : $initializer:expr ; )* )? ) => {
-        ::fieldx_plus::__fxplus_builder!(parent, __fxplus_parent: $self, $ty $( { $( $field : $initializer ; )* } )?)
+        ::fieldx_plus::__fxplus_builder!(parent, __fxplus_parent: $self, $ty $( { $( $field : $initializer ),* } )?)
     };
     ( $( $args:tt )+ ) => {
         ::fieldx_plus::__fxplus_builder!(parent, __fxplus_parent: $( $args )+ )
@@ -164,7 +164,7 @@ macro_rules! child_builder {
 #[macro_export]
 macro_rules! child_build {
     ($self:expr, $ty:ty $( => $( $field:ident : $initializer:expr ; )* )? ) => {
-        ::fieldx_plus::__fxplus_builder!(parent, __fxplus_parent: $self, $ty $( { $( $field : $initializer ; )* } )?)
+        ::fieldx_plus::__fxplus_builder!(parent, __fxplus_parent: $self, $ty $( { $( $field : $initializer ),* } )?)
             .build()
     };
     ( $( $args:tt )+ ) => {
