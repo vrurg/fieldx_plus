@@ -287,18 +287,20 @@ impl FXPlusProducer {
         let final_unwrap = self.setup_unwrapping(trait_constructor, child_args)?;
 
         let mut parent_method = FXFnConstructor::new(parent_base_ident.clone());
-        parent_method.set_self_borrow(true);
-        parent_method.set_span(child_args_span);
-        parent_method.set_ret_type(quote_spanned! {child_args_span=> Self::#rc_assoc});
+        parent_method
+            .set_self_borrow(true)
+            .set_span(child_args_span)
+            .set_ret_type(quote_spanned! {child_args_span=> Self::#rc_assoc});
 
         let mut parent_downgrade_method = FXFnConstructor::new(format_ident!(
             "{}_downgrade",
             parent_base_ident,
             span = parent_base_ident.span()
         ));
-        parent_downgrade_method.set_self_borrow(true);
-        parent_downgrade_method.set_span(child_args_span);
-        parent_downgrade_method.set_ret_type(quote_spanned! {child_args_span=> Self::#weak_assoc});
+        parent_downgrade_method
+            .set_self_borrow(true)
+            .set_span(child_args_span)
+            .set_ret_type(quote_spanned! {child_args_span=> Self::#weak_assoc});
 
         // This method is for the use of macro_rules since its name is not dependent on the user-specified parent name.
         let mut fxplus_parent_method = FXFnConstructor::new_associated(format_ident!(
@@ -306,9 +308,10 @@ impl FXPlusProducer {
             D::base_name(),
             span = parent_base_ident.span()
         ));
-        fxplus_parent_method.set_span(child_args_span);
-        fxplus_parent_method.set_ret_type(quote_spanned! {child_args_span=> Self::#fxp_assoc});
-        fxplus_parent_method.add_param(quote_spanned! {child_args_span=> #parent_base_ident: Self::#weak_assoc});
+        fxplus_parent_method
+            .set_span(child_args_span)
+            .set_ret_type(quote_spanned! {child_args_span=> Self::#fxp_assoc})
+            .add_param(quote_spanned! {child_args_span=> #parent_base_ident: Self::#weak_assoc});
 
         if *is_rc_strong {
             let rc_strong_type = ctx.impl_details().ref_count_strong(child_args_span);
@@ -326,19 +329,19 @@ impl FXPlusProducer {
                 .set_ret_stmt(quote_spanned! {child_args_span=> #rc_weak_type::upgrade(&#parent_base_ident).unwrap() });
         }
         else {
-            parent_method.set_ret_stmt(
-                quote_spanned! {child_args_span=> #rc_weak_type::upgrade(&self.#parent_field_ident) #final_unwrap },
-            );
-
-            parent_downgrade_method
+            parent_method
+                .set_ret_stmt(
+                    quote_spanned! {child_args_span=> #rc_weak_type::upgrade(&self.#parent_field_ident) #final_unwrap },
+                )
                 .set_ret_stmt(quote_spanned! {child_args_span=> #rc_weak_type::clone(&self.#parent_field_ident) });
 
             fxplus_parent_method.set_ret_stmt(quote! {#parent_base_ident});
         }
 
-        trait_constructor.add_method(parent_method);
-        trait_constructor.add_method(parent_downgrade_method);
-        trait_constructor.add_method(fxplus_parent_method);
+        trait_constructor
+            .add_method(parent_method)
+            .add_method(parent_downgrade_method)
+            .add_method(fxplus_parent_method);
 
         Ok(())
     }
@@ -349,9 +352,10 @@ impl FXPlusProducer {
         let trait_name = D::child_trait_name(child_args_span);
         let mut trait_constructor = FXImplConstructor::new(trait_name);
 
-        trait_constructor.set_span(child_args_span);
-        trait_constructor.set_from_generics(Some(ctx.input().generics().clone()));
-        trait_constructor.set_for_ident(ctx.input_ident());
+        trait_constructor
+            .set_span(child_args_span)
+            .set_from_generics(Some(ctx.input().generics().clone()))
+            .set_for_ident(ctx.input_ident());
 
         self.setup_child_methods(&mut trait_constructor, child_args)?;
         ctx.impl_ctx_mut().add_trait(trait_constructor);
@@ -367,17 +371,19 @@ impl FXPlusProducer {
         let weak_type = ctx.impl_details().ref_count_weak(args.parent.span());
         let mut trait_constructor = FXImplConstructor::new(trait_name);
 
-        trait_constructor.add_assoc_type(quote_spanned! {args.parent.span()=> type WeakSelf = #weak_type<Self>;});
-        trait_constructor.set_from_generics(Some(ctx.input().generics().clone()));
-        trait_constructor.set_for_ident(ctx.input_ident());
+        trait_constructor
+            .add_assoc_type(quote_spanned! {args.parent.span()=> type WeakSelf = #weak_type<Self>;})
+            .set_from_generics(Some(ctx.input().generics().clone()))
+            .set_for_ident(ctx.input_ident());
 
         // Add fx_plus downgrade method
         let mut downgrade_method =
             FXFnConstructor::new(format_ident!("__fxplus_myself_downgrade", span = args.parent.span()));
-        downgrade_method.set_span(args.parent.span());
-        downgrade_method.add_attribute_toks(quote_spanned! {args.parent.span()=> #[inline(always)]})?;
-        downgrade_method.set_ret_type(quote_spanned! {args.parent.span()=> #weak_type<Self>});
-        downgrade_method.set_ret_stmt(quote_spanned! {args.parent.span()=> self.myself_downgrade()});
+        downgrade_method
+            .set_span(args.parent.span())
+            .add_attribute_toks(quote_spanned! {args.parent.span()=> #[inline(always)]})?
+            .set_ret_type(quote_spanned! {args.parent.span()=> #weak_type<Self>})
+            .set_ret_stmt(quote_spanned! {args.parent.span()=> self.myself_downgrade()});
 
         trait_constructor.add_method(downgrade_method);
 
