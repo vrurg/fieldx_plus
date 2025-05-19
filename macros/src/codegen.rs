@@ -329,10 +329,11 @@ impl FXPlusProducer {
                 .set_ret_stmt(quote_spanned! {child_args_span=> #rc_weak_type::upgrade(&#parent_base_ident).unwrap() });
         }
         else {
-            parent_method
-                .set_ret_stmt(
-                    quote_spanned! {child_args_span=> #rc_weak_type::upgrade(&self.#parent_field_ident) #final_unwrap },
-                )
+            parent_method.set_ret_stmt(
+                quote_spanned! {child_args_span=> #rc_weak_type::upgrade(&self.#parent_field_ident) #final_unwrap },
+            );
+
+            parent_downgrade_method
                 .set_ret_stmt(quote_spanned! {child_args_span=> #rc_weak_type::clone(&self.#parent_field_ident) });
 
             fxplus_parent_method.set_ret_stmt(quote! {#parent_base_ident});
