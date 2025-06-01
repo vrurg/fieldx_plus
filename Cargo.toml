@@ -17,8 +17,8 @@
     fieldx             = { version = "0.1.17" }
     fieldx_aux         = { version = "0.1.17" }
     fieldx_core        = { version = "0.1.17" }
-    fieldx_plus        = { version = "0.1.9", path = "core" }
-    fieldx_plus_macros = { version = "0.1.9", path = "macros" }
+    fieldx_plus        = { version = "0.1.10-beta.1", path = "core" }
+    fieldx_plus_macros = { version = "0.1.10-beta.1", path = "macros" }
     once_cell          = "1.21"
     proc-macro2        = "1.0"
     quote              = "1.0"
