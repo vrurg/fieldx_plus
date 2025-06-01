@@ -1,7 +1,5 @@
 // Here we test bypassing of some sub-arguments to the upstream `fxstruct` attribute.
 
-use std::rc::Rc;
-
 use fieldx_plus::fx_plus;
 
 #[fx_plus(parent, builder(post_build))]
@@ -11,7 +9,7 @@ struct Foo {
 }
 
 impl Foo {
-    fn post_build(self: Rc<Self>) -> Rc<Self> {
+    fn post_build(self) -> Self {
         *self.foo_mut() += 1;
         self
     }
