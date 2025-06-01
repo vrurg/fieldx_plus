@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.1.8] - 2025-04-30
+## [v0.1.9] - 2025-06-01
 
 ### Features
 
@@ -18,20 +18,29 @@
 - `_build` and `_builder` macros to support parameterized types
 - Make the macro use rc-wrapped self
 - Ensure compatibility with the latest fieldx version
+- Reference counting didn't account for sync/async mode
+- *_build and *_builder macros were inconsistent in their formats
+- Make test conform to the changes in post_build semantics
 
 ### Refactor
 
 - Rename AppObj to Agent
 - Update code to conform to the latest changes in the `fieldx` crate
 - Introduce `or` and `or_else` sub-arguments of `unwrap`
+- Drop old `*_build` macro format support
 
 ### Documentation
 
 - Add minimal documentation
+- Document Parent/Child and App/Agent traits
 
 ### Styling
 
 - Make *_build and *_builder macro syntax be closer to Rust standard
+
+### Testing
+
+- Add a test for bypassing subarguments to `fxstruct`
 
 ### Maintenance
 

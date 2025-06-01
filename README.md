@@ -2,7 +2,7 @@
 [![License](https://img.shields.io/github/license/vrurg/fieldx_plus)](https://github.com/vrurg/fieldx_plus/blob/main/LICENSE)
 [![Crates.io Version](https://img.shields.io/crates/v/fieldx_plus)](https://crates.io/crates/fieldx_plus)
 
-# fieldx_plus v0.1.8
+# fieldx_plus v0.1.9
 
 This crate is intended for implementing some design patterns, based on [`fieldx`](https://crates.io/crates/fieldx)
 crate. At the moment it is only Application/Agent and Parent/Child patterns. Both are basically the same thing
@@ -50,7 +50,7 @@ impl Application {
     }
 }
 
-#[fx_plus(agent(Application, unwrap(error(AppError, AppError::AppIsGone))), sync)]
+#[fx_plus(agent(Application, unwrap(or(AppError, AppError::AppIsGone))), sync)]
 struct NetService {
     port: u16,
     #[fieldx(into, get)]
@@ -90,10 +90,10 @@ arguments:
 - `child(unwrap)` results in simple `.unwrap()` applied the upgrade call
 - `unwrap(expect("Error message")` commands to use `.expect("Error message")`; with this and the above variant we
   always get just the app/parent object
-- `unwrap(error(ErrorType, <expression>))` would produce `app`/`parent` methods that return `ErrorType`; the
+- `unwrap(or(ErrorType, <expression>))` would produce `app`/`parent` methods that return `ErrorType`; the
   particular value returned depends on the `<expression>`. Say, `ErrorType::ParentIsGone` can be used to return a
   specific error code
-- `unwrap(map(ErrorType, <expr>))` can be used to invoke a method on `self`. `<expr>` can either be just method name
+- `unwrap(or_else(ErrorType, <expr>))` can be used to invoke a method on `self`. `<expr>` can either be just method name
   or something like `map_to_err("argument", 42)` in which case the `map_to_err` method will get the arguments
   specified.
 
