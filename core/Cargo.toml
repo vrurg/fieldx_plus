@@ -9,7 +9,7 @@
     name                   = "fieldx_plus"
     readme                 = "../README.md"
     repository.workspace   = true
-    version                = "0.1.10-beta.1"
+    version                = "0.1.10"
 
 [dependencies]
     fieldx             = { workspace = true }
