@@ -25,6 +25,12 @@ use quote::ToTokens;
 use std::rc::Rc;
 use syn::spanned::Spanned;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TranslateAs {
+    Or,
+    OrElse,
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct AppDescriptor {}
 
@@ -127,20 +133,37 @@ impl FXPlusProducer {
         &self.ctx
     }
 
-    fn translate_or_expr(&self, expr: &syn::Expr) -> darling::Result<TokenStream> {
+    fn translate_or_expr(
+        &self,
+        expr: &syn::Expr,
+        translate_as: TranslateAs,
+        span: Span,
+    ) -> darling::Result<TokenStream> {
+        let is_or_else = translate_as == TranslateAs::OrElse;
+        let closure_head = if is_or_else {
+            quote_spanned! {span=> || }
+        }
+        else {
+            quote! {}
+        };
+
         let expr = match expr {
             syn::Expr::Path(ref path) => {
                 if let Some(ident) = path.path.get_ident() {
                     // A single ident path is considered a method name.
-                    quote_spanned! {path.span()=> self.#ident()}
+                    quote_spanned! {path.span()=> #closure_head self.#ident()}
                 }
                 else {
                     // A 2+ elements path is used as-is. Normally, it would represent an error enum variant or a
-                    // constant.
+                    // constant with or(); or an Fn reference with or_else().
                     path.to_token_stream()
                 }
             }
-            _ => expr.to_token_stream(),
+            syn::Expr::Closure(ref closure) if is_or_else => closure.to_token_stream(),
+            _ => {
+                let expr_toks = expr.to_token_stream();
+                quote_spanned! {span=> #closure_head #expr_toks}
+            }
         };
         Ok(expr)
     }
@@ -232,7 +255,6 @@ impl FXPlusProducer {
                     return Err(darling::Error::custom("Internal error: either `or(...)` or `or_else(...)` subarguments are reported as set, but none contains a value").with_span(&unwrap_arg.final_span()));
                 };
                 let error_type = or_arg.0.to_token_stream();
-                let expr = self.translate_or_expr(&or_arg.1)?;
                 return_type = quote_spanned![or_arg.0.span()=> Result<#rc_strong<#parent_type>, #error_type>];
 
                 trait_constructor.add_assoc_type(quote_spanned! {parent_type.span()=>
@@ -240,10 +262,12 @@ impl FXPlusProducer {
                 });
 
                 if unwrap_arg.or_arg().is_set_bool() {
+                    let expr = self.translate_or_expr(&or_arg.1, TranslateAs::Or, or_arg.final_span())?;
                     quote_spanned![or_arg.final_span()=> .ok_or(#expr)]
                 }
                 else {
-                    quote_spanned![or_arg.final_span()=> .ok_or_else(|| #expr)]
+                    let expr = self.translate_or_expr(&or_arg.1, TranslateAs::OrElse, or_arg.final_span())?;
+                    quote_spanned![or_arg.final_span()=> .ok_or_else(#expr)]
                 }
             }
             else {
