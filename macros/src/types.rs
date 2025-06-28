@@ -14,11 +14,8 @@ use fieldx_aux::FXString;
 use fieldx_aux::FXSynTuple;
 use fieldx_aux::FromNestAttr;
 use proc_macro2::Span;
-use proc_macro2::TokenStream;
 use proc_macro2::TokenTree;
 use quote::format_ident;
-use quote::quote;
-use quote::ToTokens;
 use std::marker::PhantomData;
 use std::ops::Deref;
 use syn::ext::IdentExt;
@@ -26,26 +23,26 @@ use syn::parse::Parse;
 use syn::spanned::Spanned;
 use syn::Token;
 
-#[derive(Debug, Clone, Default)]
-pub(crate) struct SlurpyArgs {
-    args: Vec<NestedMeta>,
-}
+// #[derive(Debug, Clone, Default)]
+// pub(crate) struct SlurpyArgs {
+//     args: Vec<NestedMeta>,
+// }
 
-impl FromMeta for SlurpyArgs {
-    fn from_list(item: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
-        Ok(Self { args: item.to_vec() })
-    }
-}
+// impl FromMeta for SlurpyArgs {
+//     fn from_list(item: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
+//         Ok(Self { args: item.to_vec() })
+//     }
+// }
 
-impl ToTokens for SlurpyArgs {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        for arg in self.args.iter() {
-            // eprintln!("ARG: {}", indent_all_by(4, format!("{:#?}", arg)));
-            tokens.extend(arg.to_token_stream());
-            tokens.extend(quote![,]);
-        }
-    }
-}
+// impl ToTokens for SlurpyArgs {
+//     fn to_tokens(&self, tokens: &mut TokenStream) {
+//         for arg in self.args.iter() {
+//             // eprintln!("ARG: {}", indent_all_by(4, format!("{:#?}", arg)));
+//             tokens.extend(arg.to_token_stream());
+//             tokens.extend(quote![,]);
+//         }
+//     }
+// }
 
 #[derive(FromMeta, Clone, Debug, Default)]
 #[fxstruct(default(off), get)]
