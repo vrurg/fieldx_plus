@@ -22,10 +22,15 @@
     tokio       = { workspace = true, features = ["macros", "rt", "rt-multi-thread", "test-util"] }
 
 [features]
-    async      = ["fieldx/async"]
-    send_guard = ["fieldx/send_guard"]
-    serde      = ["fieldx/serde"]
-    sync       = ["fieldx/sync"]
+    async              = ["fieldx/async"]
+    async-lock         = ["async", "fieldx/async-lock"]
+    async-lock-backend = ["fieldx/async-lock-backend"]
+    async-tokio        = ["async", "fieldx/async-tokio"]
+    clonable-lock      = ["fieldx/clonable-lock"]
+    send_guard         = ["fieldx/send_guard"]
+    serde              = ["fieldx/serde"]
+    sync               = ["fieldx/sync"]
+    tokio-backend      = ["fieldx/tokio-backend"]
 
 [badges]
     github = { repository = "vrurg/fieldx_plus", workflow = "CI" }

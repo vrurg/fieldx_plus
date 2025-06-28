@@ -3,9 +3,27 @@ extend = "build-tools/std-makefile.toml"
 [env]
     CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
     __MAKE_README_CRATE_ROOT__           = "core"
-    __MAKE_TEST_FEATURES__               = "sync async serde send_guard"
-    __MAKE_TEST_TASKS__                  = "test-default test-combinations"
-    __MAKE_TOOLCHAINS__                  = "1.77 stable beta nightly"
+    __MAKE_TEST_FEATURES__               = "sync serde send_guard"
+    __MAKE_TEST_TASKS__                  = "test-workspace test-combinations"
+    __MAKE_TOOLCHAINS__                  = "1.78 stable beta nightly"
 
 [config]
     default_to_workspace = false
+
+[tasks.test-no-async]
+    description = "Tests without async features."
+    run_task    = "test-combinations"
+
+[tasks.test-async-tokio]
+    description = "Tests with async-tokio features."
+    env         = { __MAKE_TEST_FIXED_FEATURES__ = "async-tokio" }
+    run_task    = "test-combinations"
+
+[tasks.test-async-lock]
+    description = "Tests with async-lock features."
+    env         = { __MAKE_TEST_FIXED_FEATURES__ = "async-lock" }
+    run_task    = "test-combinations"
+
+[tasks.test-workspace]
+    description = "Test workspace with all features."
+    run_task    = { name = ["test-default", "test-no-async", "test-async-tokio", "test-async-lock"] }
