@@ -20,7 +20,7 @@ jobs:
           - stable
           - nightly
         feature:
-            - ""
+            - "\"\""
             - "async-tokio"
             - "async-lock"
             - "sync"
