@@ -16,54 +16,27 @@ jobs:
       matrix:
         os: [ubuntu, macos, windows]
         toolchain:
-          - 1.77
+          - 1.78
           - stable
-          - beta
           - nightly
-        feature: [serde, send_guard]
+        feature:
+            - ""
+            - "async-tokio"
+            - "async-lock"
+            - "sync"
+            - "serde"
+            - "async-tokio,sync"
+            - "async-lock,sync"
+            - "async-tokio,serde"
+            - "async-lock,serde"
+            - "async-tokio,sync,serde"
+            - "async-lock,sync,serde"
         exclude:
           - os: windows
             toolchain: nightly
     steps:
       - uses: actions/checkout@v4
-      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
-      - run: cargo build --verbose --all --features sync,async,${{ matrix.feature }}
-      - run: cargo test --verbose --all --features sync,async,${{ matrix.feature }}
-        if: matrix.toolchain == 'nightly'
-      - run: cargo test --verbose --all --all-features
-        if: matrix.toolchain == 'nightly'
-  all_features:
-    runs-on: ${{ matrix.os }}-latest
-    strategy:
-      matrix:
-        os: [ubuntu, macos, windows]
-        toolchain:
-          - 1.77
-          - stable
-          - beta
-          - nightly
-    env:
-      __MAKE_DEFAULT_TOOLCHAIN__: ${{ matrix.toolchain }}
-    steps:
-      - uses: actions/checkout@v4
-      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
-      - run: cargo build --verbose --all --all-features
-      - run: cargo test --verbose --all --all-features
-  no_features:
-    runs-on: ${{ matrix.os }}-latest
-    strategy:
-      matrix:
-        os: [ubuntu, macos, windows]
-        toolchain:
-          - 1.77
-          - stable
-          - beta
-          - nightly
-    steps:
-      - uses: actions/checkout@v4
-      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
-      - run: cargo build --verbose --all
-      - run: cargo test --verbose --all
+      - run: cargo +${{ matrix.toolchain }} test --verbose --all --features ${{ matrix.feature }}
   build_docs:
     runs-on: ubuntu-latest
     steps:
