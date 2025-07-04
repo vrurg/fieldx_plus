@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.1.10] - 2025-06-06
+## [v0.1.11] - 2025-07-04
 
 ### Features
 
@@ -30,6 +30,8 @@
 - Update code to conform to the latest changes in the `fieldx` crate
 - Introduce `or` and `or_else` sub-arguments of `unwrap`
 - Drop old `*_build` macro format support
+- Make the crate compatible with FieldX v0.2
+- Adapt the GitHub workflow to the new features flag system
 
 ### Documentation
 
