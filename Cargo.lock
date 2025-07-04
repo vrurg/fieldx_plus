@@ -252,7 +252,7 @@ dependencies = [
 
 [[package]]
 name = "fieldx_plus"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "fieldx",
  "fieldx_plus_macros",
@@ -263,7 +263,7 @@ dependencies = [
 
 [[package]]
 name = "fieldx_plus_macros"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "darling",
  "fieldx",
