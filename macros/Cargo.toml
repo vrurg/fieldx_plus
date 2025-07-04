@@ -25,7 +25,12 @@
     proc-macro = true
 
 [features]
-    async      = ["fieldx/async"]
-    send_guard = ["fieldx/send_guard"]
-    serde      = []
-    sync       = ["fieldx/sync"]
+    async              = ["fieldx/async", "fieldx_core/async"]
+    async-lock         = ["async", "fieldx/async-lock"]
+    async-lock-backend = ["fieldx/async-lock-backend"]
+    async-tokio        = ["async", "fieldx/async-tokio"]
+    clonable-lock      = ["fieldx/clonable-lock", "fieldx_core/clonable-lock"]
+    send_guard         = ["fieldx/send_guard"]
+    serde              = ["fieldx/serde", "fieldx_aux/serde", "fieldx_core/serde"]
+    sync               = ["fieldx/sync", "fieldx_core/sync"]
+    tokio-backend      = ["fieldx/tokio-backend"]
