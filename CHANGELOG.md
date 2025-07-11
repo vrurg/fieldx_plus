@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.1.11] - 2025-07-04
+## [v0.1.12] - 2025-07-11
 
 ### Features
 
@@ -23,6 +23,7 @@
 - *_build and *_builder macros were inconsistent in their formats
 - Make test conform to the changes in post_build semantics
 - Incorrect env var name in the workflow
+- Use full path to the standard `Result` type
 
 ### Refactor
 
