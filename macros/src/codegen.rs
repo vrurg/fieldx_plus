@@ -255,7 +255,8 @@ impl FXPlusProducer {
                     return Err(darling::Error::custom("Internal error: either `or(...)` or `or_else(...)` subarguments are reported as set, but none contains a value").with_span(&unwrap_arg.final_span()));
                 };
                 let error_type = or_arg.0.to_token_stream();
-                return_type = quote_spanned![or_arg.0.span()=> Result<#rc_strong<#parent_type>, #error_type>];
+                return_type =
+                    quote_spanned![or_arg.0.span()=> ::std::result::Result<#rc_strong<#parent_type>, #error_type>];
 
                 trait_constructor.add_assoc_type(quote_spanned! {parent_type.span()=>
                     type #rc_assoc = #return_type;
